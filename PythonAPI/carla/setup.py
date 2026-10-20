@@ -33,7 +33,7 @@ def get_libcarla_extensions():
 
     if os.name == "posix":
         import distro
-        supported_dists = ["ubuntu", "debian", "deepin"]
+        supported_dists = ["ubuntu", "debian", "deepin", "arch", "cachyos"]
         
         linux_distro = distro.id().lower()
         if linux_distro in supported_dists:

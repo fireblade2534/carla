@@ -1,5 +1,4 @@
 #! /bin/bash
-
 # ==============================================================================
 # -- Parse arguments -----------------------------------------------------------
 # ==============================================================================
@@ -12,14 +11,12 @@ REMOVE_INTERMEDIATE=false
 BUILD_RSS_VARIANT=false
 BUILD_PYTHONAPI=true
 INSTALL_PYTHONAPI=true
-
 OPTS=`getopt -o h --long help,config:,rebuild,clean,rss,carsim,python-version:,build-wheel,target-wheel-platform:,packages:,clean-intermediate,all,xml,target-archive:, -n 'parse-options' -- "$@"`
 
 eval set -- "$OPTS"
 
 PY_VERSION_LIST=3
 TARGET_WHEEL_PLATFORM=
-
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --rebuild )
@@ -55,22 +52,23 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# CachyOS / GCC 16 compatibility: PythonAPI is the CLIENT and links against
+# the libstdc++ variants of LibCarla, Boost.Python, rpclib, Xerces and OSM2ODR.
+# Unreal's bundled Clang 10 cannot parse GCC 16's C++ library headers.
+# Use the same system Clang used to build those client-side dependencies.
+export CC="/usr/bin/clang"
+export CXX="/usr/bin/clang++"
+# Do NOT prepend /usr/bin or UE4's bundled toolchain to PATH here: doing so
+# would hide the active Python 3.10 virtual environment from `env python3`.
 
-export CC="$UE4_ROOT/Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v17_clang-10.0.1-centos7/x86_64-unknown-linux-gnu/bin/clang"
-export CXX="$UE4_ROOT/Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v17_clang-10.0.1-centos7/x86_64-unknown-linux-gnu/bin/clang++"
-export PATH="$UE4_ROOT/Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v17_clang-10.0.1-centos7/x86_64-unknown-linux-gnu/bin:$PATH"
-
-source $(dirname "$0")/Environment.sh
-
+source "$(dirname "$0")/Environment.sh"
 if ! { ${REMOVE_INTERMEDIATE} || ${BUILD_PYTHONAPI} || ${BUILD_PYTHONAPI_WHEEL} ; }; then
   fatal_error "Nothing selected to be done."
 fi
-
 # Convert comma-separated string to array of unique elements.
 IFS="," read -r -a PY_VERSION_LIST <<< "${PY_VERSION_LIST}"
 
 pushd "${CARLA_PYTHONAPI_SOURCE_FOLDER}" >/dev/null
-
 # ==============================================================================
 # -- Clean intermediate files --------------------------------------------------
 # ==============================================================================
@@ -85,7 +83,6 @@ if ${REMOVE_INTERMEDIATE} ; then
   find source -name "__pycache__" -type d -exec rm -rf "{}" \;
 
 fi
-
 # ==============================================================================
 # -- Build API -----------------------------------------------------------------
 # ==============================================================================
@@ -94,20 +91,18 @@ if ${BUILD_RSS_VARIANT} ; then
   export BUILD_RSS_VARIANT=${BUILD_RSS_VARIANT}
 fi
 
-
 if ${BUILD_PYTHONAPI} ; then
   # Add patchelf to the path. Auditwheel relies on patchelf to repair ELF files.
   export PATH="${LIBCARLA_INSTALL_CLIENT_FOLDER}/bin:${PATH}"
-  
+
+  log "Building Python wheel with client compiler ${CXX}."
   for PY_VERSION in ${PY_VERSION_LIST[@]} ; do
     log "Building Python API wheel for Python ${PY_VERSION}."
     /usr/bin/env python${PY_VERSION} -m build --wheel --outdir dist/.tmp .
-
     if ${INSTALL_PYTHONAPI} ; then
       log "Installing Python API for Python ${PY_VERSION}."
       /usr/bin/env python${PY_VERSION} -m pip install --force-reinstall dist/.tmp/$(ls dist/.tmp | grep .whl)
     fi
-
     if [[ -z ${TARGET_WHEEL_PLATFORM} ]] ; then
       cp dist/.tmp/$(ls dist/.tmp | grep .whl) dist
     else
@@ -118,7 +113,6 @@ if ${BUILD_PYTHONAPI} ; then
     rm -rf dist/.tmp
   done
 fi
-
 # ==============================================================================
 # -- ...and we are done --------------------------------------------------------
 # ==============================================================================
