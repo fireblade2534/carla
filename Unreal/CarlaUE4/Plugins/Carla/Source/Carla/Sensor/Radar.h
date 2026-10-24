@@ -14,7 +14,7 @@
 #include <carla/sensor/data/RadarData.h>
 #include <compiler/enable-ue4-macros.h>
 
-#include "Radar.generated.h"
+  
 
 /// A ray-cast based Radar sensor.
 UCLASS()
