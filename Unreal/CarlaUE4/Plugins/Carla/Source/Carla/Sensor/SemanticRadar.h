@@ -38,6 +38,9 @@ public:
   UFUNCTION(BlueprintCallable, Category = "Semantic Radar")
   void SetPointsPerSecond(int NewPointsPerSecond);
 
+  UFUNCTION(BlueprintCallable, Category = "Semantic Radar")
+  void SetTrackThreshold(int NewTrackThreshold);
+
 protected:
 
   void BeginPlay() override;
@@ -75,12 +78,8 @@ private:
   FVector PrevLocation;
 
   struct SemanticRayData {
-    float Radius;
-    float Angle;
     bool Hitted;
-    float RelativeVelocity;
-    FVector2D AzimuthAndElevation;
-    float Distance;
+    TWeakObjectPtr<AActor> HitActor;
   };
 
   std::vector<SemanticRayData> Rays;

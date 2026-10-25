@@ -8,6 +8,7 @@
 #include "Runtime/Core/Public/Async/ParallelFor.h"
 
 #include <compiler/disable-ue4-macros.h>
+#include <map>
 #include "carla/geom/Math.h"
 #include "carla/ros2/ROS2.h"
 #include <compiler/enable-ue4-macros.h>
@@ -157,32 +158,36 @@ void ASemanticRadar::SendLineTraces(float DeltaTime)
       const TWeakObjectPtr<AActor> HittedActor = OutHit.Actor;
       if (Hitted && HittedActor.Get()) {
         Rays[idx].Hitted = true;
-
-        Rays[idx].RelativeVelocity = CalculateRelativeVelocity(OutHit, RadarLocation);
-
-        Rays[idx].AzimuthAndElevation = FMath::GetAzimuthAndElevation (
-          (EndLocation - RadarLocation).GetSafeNormal() * Range,
-          TransformXAxis,
-          TransformYAxis,
-          TransformZAxis
-        );
-
-        Rays[idx].Distance = OutHit.Distance * TO_METERS;
+        Rays[idx].HitActor = HittedActor;
       }
     });
   }
   GetWorld()->GetPhysicsScene()->GetPxScene()->unlockRead();
 
+  TMap<TWeakObjectPtr<AActor>, std::uint32_t> VehicleHitCounts;
+
   // Write the detections in the output structure
   for (auto& ray : Rays) {
-    if (ray.Hitted) {
-      RadarData.WriteDetection({
-        ray.RelativeVelocity,
-        ray.AzimuthAndElevation.X,
-        ray.AzimuthAndElevation.Y,
-        ray.Distance
-      });
+    if (!ray.Hitted) {
+      continue;
     }
+
+    AActor* HitActor = ray.HitActor.Get()
+
+    if (!HitActor) {
+      continue;
+    }
+
+    if (!HitActor->IsA<ACarlaWheeledVehicle>()) {
+      continue;
+    }
+
+    VehicleHitCounts.FindOrAdd(ray.HitActor) += 1;
   }
 
+  for (const auto& Pair : VehicleHitCounts) {
+    if (AActor* Actor = Pair.Key.Get()) {
+      
+    }
+  }
 }

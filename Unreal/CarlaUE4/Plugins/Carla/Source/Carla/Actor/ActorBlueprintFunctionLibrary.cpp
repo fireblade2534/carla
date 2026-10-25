@@ -912,6 +912,8 @@ void UActorBlueprintFunctionLibrary::MakeRadarDefinition(
   PointsPerSecond.RecommendedValues = { TEXT("1500") };
   PointsPerSecond.bRestrictToRecommended = false;
 
+  FActorVariation 
+
   // Noise seed
   FActorVariation NoiseSeed;
   NoiseSeed.Id = TEXT("noise_seed");
