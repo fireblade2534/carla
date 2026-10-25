@@ -79,6 +79,23 @@ private:
   /// Applies @a Validator to each item in @a Array. Pushes a new context to the
   /// stack for each item.
   template <typename T, typename F>
+void ARayCastSemanticLidar::ResetRecordedHits(uint32_t Channels, uint32_t MaxPointsPerChannel) {
+  RecordedHits.resize(Channels);
+
+  for (auto& hits : RecordedHits) {
+    hits.clear();
+    hits.reserve(MaxPointsPerChannel);
+  }
+}
+
+void ARayCastSemanticLidar::PreprocessRays(uint32_t Channels, uint32_t MaxPointsPerChannel) {
+  RayPreprocessCondition.resize(Channels);
+
+  for (auto& conds : RayPreprocessCondition) {
+    conds.clear();
+    conds.resize(MaxPointsPerChannel);
+    std::fill(conds.begin(), conds.end(), true);
+  }
   bool ForEach(const FString &Type, const TArray<T> &Array, F Validator)
   {
     bool Result = true;
@@ -853,20 +870,22 @@ void UActorBlueprintFunctionLibrary::MakeIMUDefinition(
   Success = CheckActorDefinition(Definition);
 }
 
-FActorDefinition UActorBlueprintFunctionLibrary::MakeRadarDefinition()
+FActorDefinition UActorBlueprintFunctionLibrary::MakeRadarDefinition(
+    const FString &Id)
 {
   FActorDefinition Definition;
   bool Success;
-  MakeRadarDefinition(Success, Definition);
+  MakeRadarDefinition(Id, Success, Definition);
   check(Success);
   return Definition;
 }
 
 void UActorBlueprintFunctionLibrary::MakeRadarDefinition(
+    const FString &Id
     bool &Success,
     FActorDefinition &Definition)
 {
-  FillIdAndTags(Definition, TEXT("sensor"), TEXT("other"), TEXT("radar"));
+  FillIdAndTags(Definition, TEXT("sensor"), TEXT("other"), Id);
   AddVariationsForSensor(Definition);
 
   FActorVariation HorizontalFOV;
@@ -900,12 +919,23 @@ void UActorBlueprintFunctionLibrary::MakeRadarDefinition(
   NoiseSeed.RecommendedValues = { TEXT("0") };
   NoiseSeed.bRestrictToRecommended = false;
 
-  Definition.Variations.Append({
-    HorizontalFOV,
-    VerticalFOV,
-    Range,
-    PointsPerSecond,
-    NoiseSeed});
+  if (Id == "radar") {
+    Definition.Variations.Append({
+      HorizontalFOV,
+      VerticalFOV,
+      Range,
+      PointsPerSecond,
+      NoiseSeed});
+  } else if (Id == "radar_semantic" ) {
+    Definition.Variations.Append({
+      HorizontalFOV,
+      VerticalFOV,
+      Range,
+      PointsPerSecond,
+      NoiseSeed});
+  } else {
+    DEBUG_ASSERT(false);
+  }
 
   Success = CheckActorDefinition(Definition);
 }

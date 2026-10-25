@@ -19,7 +19,7 @@
 
 FActorDefinition ARadar::GetSensorDefinition()
 {
-  return UActorBlueprintFunctionLibrary::MakeRadarDefinition();
+  return UActorBlueprintFunctionLibrary::MakeRadarDefinition(TEXT("radar"));
 }
 
 ARadar::ARadar(const FObjectInitializer& ObjectInitializer)
@@ -46,7 +46,7 @@ void ARadar::SetHorizontalFOV(float NewHorizontalFOV)
   HorizontalFOV = NewHorizontalFOV;
 }
 
-void  ARadar::SetVerticalFOV(float NewVerticalFOV)
+void ARadar::SetVerticalFOV(float NewVerticalFOV)
 {
   VerticalFOV = NewVerticalFOV;
 }
