@@ -25,6 +25,8 @@
 #include <carla/sensor/data/LibITS.h>
 
 #include <carla/sensor/data/RadarData.h>
+#include <carla/sensor/data/SemanticRadarData.h>
+#include <carla/sensor/data/SemanticRadarMeasurement.h>
 
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
@@ -592,12 +594,29 @@ void export_sensor_data() {
     .def(self_ns::str(self_ns::self))
   ;
 
+  class_<csd::SemanticRadarMeasurement, bases<cs::SensorData>, boost::noncopyable, boost::shared_ptr<csd::SemanticRadarMeasurement>>("SemanticRadarMeasurement", no_init)
+    .add_property("raw_data", &GetRawDataAsBuffer<csd::SemanticRadarMeasurement>)
+    .def("get_detection_count", &csd::SemanticRadarMeasurement::GetDetectionAmount)
+    .def("__len__", &csd::SemanticRadarMeasurement::size)
+    .def("__iter__", iterator<csd::SemanticRadarMeasurement>())
+    .def("__getitem__", +[](const csd::SemanticRadarMeasurement &self, size_t pos) -> csd::SemanticRadarDetection {
+      return self.at(pos);
+    })
+  ;
+
   class_<csd::RadarDetection>("RadarDetection")
     .def_readwrite("velocity", &csd::RadarDetection::velocity)
     .def_readwrite("azimuth", &csd::RadarDetection::azimuth)
     .def_readwrite("altitude", &csd::RadarDetection::altitude)
     .def_readwrite("depth", &csd::RadarDetection::depth)
     .def(self_ns::str(self_ns::self))
+  ;
+
+  class_<csd::SemanticRadarDetection>("SemanticRadarDetection")
+    .def_readwrite("object_idx", &csd::SemanticRadarDetection::object_idx)
+    .def_readwrite("object_tag", &csd::SemanticRadarDetection::object_tag)
+    .def_readwrite("bbox", &csd::SemanticRadarDetection::bbox)
+    .def_readwrite("velocity", &csd::SemanticRadarDetection::velocity)
   ;
 
   class_<csd::LidarDetection>("LidarDetection")

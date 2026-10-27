@@ -30,6 +30,7 @@
 #include "carla/sensor/s11n/GBufferUint8Serializer.h"
 #include "carla/sensor/s11n/GBufferFloatSerializer.h"
 #include "carla/sensor/s11n/V2XSerializer.h"
+#include "carla/sensor/s11n/SemanticRadarSerializer.h"
 
 // 2. Add a forward-declaration of the sensor here.
 class ACollisionSensor;
@@ -54,6 +55,7 @@ struct FCameraGBufferUint8;
 struct FCameraGBufferFloat;
 class AV2XSensor;
 class ACustomV2XSensor;
+class ASemanticRadar;
 
 namespace carla {
 namespace sensor {
@@ -87,8 +89,8 @@ namespace sensor {
     std::pair<FCameraGBufferUint8 *, s11n::GBufferUint8Serializer>,
     std::pair<FCameraGBufferFloat *, s11n::GBufferFloatSerializer>,
     std::pair<AV2XSensor *, s11n::CAMDataSerializer>,
-    std::pair<ACustomV2XSensor *, s11n::CustomV2XDataSerializer>
-    
+    std::pair<ACustomV2XSensor *, s11n::CustomV2XDataSerializer>,
+    std::pair<ASemanticRadar *, s11n::SemanticRadarSerializer>
 
   >;
 
@@ -120,5 +122,6 @@ namespace sensor {
 #include "Carla/Sensor/WorldObserver.h"
 #include "Carla/Sensor/V2XSensor.h"
 #include "Carla/Sensor/CustomV2XSensor.h"
+#include "Carla/Sensor/SemanticRadar.h"
 
 #endif // LIBCARLA_SENSOR_REGISTRY_WITH_SENSOR_INCLUDES
