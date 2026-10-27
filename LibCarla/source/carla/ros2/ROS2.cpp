@@ -13,6 +13,7 @@
 #include "carla/sensor/data/LidarData.h"
 #include "carla/sensor/data/SemanticLidarData.h"
 #include "carla/sensor/data/RadarData.h"
+#include "carla/sensor/data/SemanticRadarData.h"
 #include "carla/sensor/data/Image.h"
 #include "carla/sensor/s11n/ImageSerializer.h"
 #include "carla/sensor/s11n/SensorHeaderSerializer.h"
@@ -29,6 +30,7 @@
 #include "publishers/CarlaNormalsCameraPublisher.h"
 #include "publishers/CarlaOpticalFlowCameraPublisher.h"
 #include "publishers/CarlaRadarPublisher.h"
+#include "publishers/CarlaSemanticRadarPublisher.h"
 #include "publishers/CarlaRGBCameraPublisher.h"
 #include "publishers/CarlaSemanticLidarPublisher.h"
 #include "publishers/CarlaSSCameraPublisher.h"
@@ -65,7 +67,8 @@ enum ESensors {
   InstanceSegmentationCamera,
   WorldObserver,
   CameraGBufferUint8,
-  CameraGBufferFloat
+  CameraGBufferFloat,
+  SemanticRadar = 22 
 };
 
 void ROS2::Enable(bool enable) {
@@ -225,6 +228,8 @@ std::shared_ptr<BasePublisher> ROS2::GetOrCreateSensor(int type, void* actor) {
       return create_and_register(std::make_shared<CarlaOpticalFlowCameraPublisher>(topic_name, frame_id));
     case ESensors::Radar:
       return create_and_register(std::make_shared<CarlaRadarPublisher>(topic_name, frame_id));
+    case ESensors::SemanticRadar:
+      return create_and_register(std::make_shared<CarlaSemanticRadarPublisher>(topic_name, frame_id));
     case ESensors::RayCastSemanticLidar:
       return create_and_register(std::make_shared<CarlaSemanticLidarPublisher>(topic_name, frame_id));
     case ESensors::RayCastLidar:
@@ -393,6 +398,27 @@ void ROS2::ProcessDataFromRadar(
 
   auto base_publisher = GetOrCreateSensor(ESensors::Radar, actor);
   auto sensor_publisher = std::dynamic_pointer_cast<CarlaRadarPublisher>(base_publisher);
+  auto transform_publisher = GetOrCreateTransformPublisher(actor);
+
+  size_t width = data.GetDetectionCount();
+  size_t height = 1;
+  sensor_publisher->WritePointCloud(_seconds, _nanoseconds, height, width, (uint8_t*)data._detections.data());
+  sensor_publisher->Publish();
+
+  if (transform_publisher) {
+    transform_publisher->Write(_seconds, _nanoseconds, GetParentFrameId(actor), GetFrameId(actor), sensor_transform);
+    transform_publisher->Publish();
+  }
+}
+
+void ROS2::ProcessDataFromSemanticRadar(
+    uint64_t sensor_type,
+    const carla::geom::Transform sensor_transform,
+    const carla::sensor::data::SemanticRadarData &data,
+    void *actor) {
+
+  auto base_publisher = GetOrCreateSensor(ESensors::SemanticRadar, actor);
+  auto sensor_publisher = std::dynamic_pointer_cast<CarlaSemanticRadarPublisher>(base_publisher);
   auto transform_publisher = GetOrCreateTransformPublisher(actor);
 
   size_t width = data.GetDetectionCount();

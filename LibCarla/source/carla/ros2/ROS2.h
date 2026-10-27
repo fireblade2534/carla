@@ -30,6 +30,7 @@ namespace carla {
       class LidarData;
       class SemanticLidarData;
       class RadarData;
+      class SemanticRadarData;
     }
   }
 }
@@ -118,6 +119,11 @@ class ROS2
       uint64_t sensor_type,
       const carla::geom::Transform sensor_transform,
       const carla::sensor::data::RadarData &data,
+      void *actor = nullptr);
+    void ProcessDataFromSemanticRadar(
+      uint64_t sensor_type,
+      const carla::geom::Transform sensor_transform,
+      const carla::sensor::data::SemanticRadarData &data,
       void *actor = nullptr);
     void ProcessDataFromObstacleDetection(
       uint64_t sensor_type,
