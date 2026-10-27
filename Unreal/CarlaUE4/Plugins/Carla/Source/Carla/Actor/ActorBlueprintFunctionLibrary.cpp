@@ -2159,27 +2159,23 @@ void UActorBlueprintFunctionLibrary::SetRadar(
     const FActorDescription &Description,
     FRadarDescription &Radar)
 {
-  CARLA_ABFL_CHECK_ACTOR(Radar);
   constexpr float TO_CENTIMETERS = 1e2;
 
-  if (Description.Variations.Contains("noise_seed"))
-  {
-    Radar.RandomSeed =
-      RetrieveActorAttributeToInt("noise_seed", Description.Variations, 0);
-  }
-  else
-  {
-    Radar.RandomSeed = Radar->GetRandomEngine()->GenerateRandomSeed();
-  }
-
+  Radar.RandomSeed =
+      RetrieveActorAttributeToInt("noise_seed", Description.Variations, 0u);
   Radar.HorizontalFOV = 
       RetrieveActorAttributeToFloat("horizontal_fov", Description.Variations, 30.0f);
-  Radar.SetVerticalFOV =
+  Radar.VerticalFOV =
       RetrieveActorAttributeToFloat("vertical_fov", Description.Variations, 30.0f);
   Radar.Range =
       RetrieveActorAttributeToFloat("range", Description.Variations, 100.0f) * TO_CENTIMETERS;
   Radar.PointsPerSecond =
-      RetrieveActorAttributeToInt("points_per_second", Description.Variations, 1500);
+      RetrieveActorAttributeToInt("points_per_second", Description.Variations, 1500u);
+
+  if (Description.Variations.Contains("track_threshold")) {
+    Radar.TrackThreshold = FMath::Max(1, 
+      RetrieveActorAttributeToInt("track_threshold", Description.Variations, 10u));
+  }
 }
 
 void UActorBlueprintFunctionLibrary::SetV2X(

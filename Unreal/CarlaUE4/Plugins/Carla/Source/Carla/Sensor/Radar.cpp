@@ -44,10 +44,15 @@ void ARadar::Set(const FActorDescription &ActorDescription)
 
   UActorBlueprintFunctionLibrary::SetRadar(ActorDescription, RadarDescription);
 
+  if (!ActorDescription.Variations.Contains("noise_seed")) {
+    RadarDescription.RandomSeed =
+        GetRandomEngine()->GenerateRandomSeed();
+  }
+
   Set(RadarDescription);
 }
 
-void ARadar::Set(const RadarDescription &RadarDescription)
+void ARadar::Set(const FRadarDescription &RadarDescription)
 {
   Description = RadarDescription;
 
@@ -137,7 +142,7 @@ void ARadar::SendLineTraces(float DeltaTime)
       FMath::SinCos(&Sin, &Cos, Angle);
 
       const FVector EndLocation = RadarLocation + TransformRotator.RotateVector({
-        Range,
+        Description.Range,
         MaxRx * Radius * Cos,
         MaxRy * Radius * Sin
       });
@@ -158,7 +163,7 @@ void ARadar::SendLineTraces(float DeltaTime)
         Rays[idx].RelativeVelocity = CalculateRelativeVelocity(OutHit, RadarLocation);
 
         Rays[idx].AzimuthAndElevation = FMath::GetAzimuthAndElevation (
-          (EndLocation - RadarLocation).GetSafeNormal() * Range,
+          (EndLocation - RadarLocation).GetSafeNormal() * Description.Range,
           TransformXAxis,
           TransformYAxis,
           TransformZAxis

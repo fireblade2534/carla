@@ -15,7 +15,7 @@ struct CARLA_API FRadarDescription
 
   /// Measure distance in centimeters.
   UPROPERTY(EditAnywhere)
-  float Range = 100.0f;
+  float Range = 10000.0f;
 
   UPROPERTY(EditAnywhere)
   uint32 PointsPerSecond = 1500u;

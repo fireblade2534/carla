@@ -107,7 +107,7 @@ public:
       bool &Success,
       FActorDefinition &Definition);
 
-  static FActorDefinition MakeRadarDefinition();
+  static FActorDefinition MakeRadarDefinition(const FString &Id);
 
   UFUNCTION(Category = "Carla Actor", BlueprintCallable)
   static void MakeRadarDefinition(

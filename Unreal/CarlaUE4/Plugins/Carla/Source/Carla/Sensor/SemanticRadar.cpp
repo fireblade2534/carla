@@ -45,10 +45,15 @@ void ASemanticRadar::Set(const FActorDescription &ActorDescription)
 
   UActorBlueprintFunctionLibrary::SetRadar(ActorDescription, RadarDescription);
 
+  if (!ActorDescription.Variations.Contains("noise_seed")) {
+    RadarDescription.RandomSeed =
+        GetRandomEngine()->GenerateRandomSeed();
+  }
+
   Set(RadarDescription);
 }
 
-void ASemanticRadar::Set(const RadarDescription &RadarDescription)
+void ASemanticRadar::Set(const FRadarDescription &RadarDescription)
 {
   Description = RadarDescription;
 
@@ -138,7 +143,7 @@ void ASemanticRadar::SendLineTraces(float DeltaTime)
       FMath::SinCos(&Sin, &Cos, Angle);
 
       const FVector EndLocation = RadarLocation + TransformRotator.RotateVector({
-        Range,
+        Description.Range,
         MaxRx * Radius * Cos,
         MaxRy * Radius * Sin
       });
@@ -188,8 +193,12 @@ void ASemanticRadar::SendLineTraces(float DeltaTime)
     ActorHitCounts.FindOrAdd(ray.HitActor) += 1;
   }
 
+  const auto &Registry = GetEpisode().GetActorRegistry();
+  const FTransform SensorTransform = GetActorTransform();
+  const FQuat SensorInverseRotation = SensorTransform.GetRotation().Inverse();
+
   for (const auto& Pair : ActorHitCounts) {
-    if (Pair.Value.Get() < Description.TrackThreshold) {
+    if (Pair.Value < Description.TrackThreshold) {
       continue;
     }
     

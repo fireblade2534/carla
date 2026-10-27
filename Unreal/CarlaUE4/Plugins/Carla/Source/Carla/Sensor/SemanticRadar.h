@@ -26,7 +26,7 @@ public:
   ASemanticRadar(const FObjectInitializer &ObjectInitializer);
 
   void Set(const FActorDescription &Description) override;
-  void Set(const FRadarDescription &RadarDescription) override;
+  virtual void Set(const FRadarDescription &RadarDescription);
 
 protected:
 
