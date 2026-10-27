@@ -8,6 +8,7 @@
 
 #include "Carla.h"
 #include "Carla/Sensor/Radar.h"
+#include "Carla/Sensor/RadarDescription.h"
 #include "Carla/Actor/ActorBlueprintFunctionLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Runtime/Core/Public/Async/ParallelFor.h"
@@ -38,28 +39,20 @@ ARadar::ARadar(const FObjectInitializer& ObjectInitializer)
 void ARadar::Set(const FActorDescription &ActorDescription)
 {
   Super::Set(ActorDescription);
-  UActorBlueprintFunctionLibrary::SetRadar(ActorDescription, this);
+
+  FRadarDescription RadarDescription;
+
+  UActorBlueprintFunctionLibrary::SetRadar(ActorDescription, RadarDescription);
+
+  Set(RadarDescription);
 }
 
-void ARadar::SetHorizontalFOV(float NewHorizontalFOV)
+void ARadar::Set(const RadarDescription &RadarDescription)
 {
-  HorizontalFOV = NewHorizontalFOV;
-}
+  Description = RadarDescription;
 
-void ARadar::SetVerticalFOV(float NewVerticalFOV)
-{
-  VerticalFOV = NewVerticalFOV;
-}
-
-void ARadar::SetRange(float NewRange)
-{
-  Range = NewRange;
-}
-
-void ARadar::SetPointsPerSecond(int NewPointsPerSecond)
-{
-  PointsPerSecond = NewPointsPerSecond;
-  RadarData.SetResolution(PointsPerSecond);
+  SetSeed(Description.RandomSeed);
+  RadarData.SetResolution(Description.PointsPerSecond);
 }
 
 void ARadar::BeginPlay()
@@ -117,9 +110,9 @@ void ARadar::SendLineTraces(float DeltaTime)
   const FVector TransformZAxis = ActorTransform.GetUnitAxis(EAxis::Z);
 
   // Maximum radar radius in horizontal and vertical direction
-  const float MaxRx = FMath::Tan(FMath::DegreesToRadians(HorizontalFOV * 0.5f)) * Range;
-  const float MaxRy = FMath::Tan(FMath::DegreesToRadians(VerticalFOV * 0.5f)) * Range;
-  const int NumPoints = (int)(PointsPerSecond * DeltaTime);
+  const float MaxRx = FMath::Tan(FMath::DegreesToRadians(Description.HorizontalFOV * 0.5f)) * Description.Range;
+  const float MaxRy = FMath::Tan(FMath::DegreesToRadians(Description.VerticalFOV * 0.5f)) * Description.Range;
+  const int NumPoints = (int)(Description.PointsPerSecond * DeltaTime);
 
   // Generate the parameters of the rays in a deterministic way
   Rays.clear();

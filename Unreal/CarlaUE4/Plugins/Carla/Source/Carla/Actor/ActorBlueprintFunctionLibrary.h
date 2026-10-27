@@ -26,6 +26,8 @@
 class ASceneCaptureSensor;
 class AShaderBasedSensor;
 struct FLidarDescription;
+struct FRadarDescription;
+
 
 UCLASS()
 class UActorBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
@@ -109,6 +111,7 @@ public:
 
   UFUNCTION(Category = "Carla Actor", BlueprintCallable)
   static void MakeRadarDefinition(
+      const FString &Id,
       bool &Success,
       FActorDefinition &Definition);
 
@@ -243,7 +246,7 @@ public:
 
   static void SetIMU(const FActorDescription &Description, AInertialMeasurementUnit *IMU);
 
-  static void SetRadar(const FActorDescription &Description, ARadar *Radar);
+  static void SetRadar(const FActorDescription &Description, FRadarDescription &Radar);
 
   static void SetV2X(const FActorDescription &Description, AV2XSensor *V2X);
   static void SetCustomV2X(const FActorDescription &Description, ACustomV2XSensor *V2X);

@@ -9,6 +9,7 @@
 #include "Carla/Sensor/Sensor.h"
 
 #include "Carla/Actor/ActorDefinition.h"
+#include "Carla/Sensor/RadarDescription.h"
 
 #include <compiler/disable-ue4-macros.h>
 #include <carla/sensor/data/RadarData.h>
@@ -31,18 +32,7 @@ public:
   ARadar(const FObjectInitializer &ObjectInitializer);
 
   void Set(const FActorDescription &Description) override;
-
-  UFUNCTION(BlueprintCallable, Category = "Radar")
-  void SetHorizontalFOV(float NewHorizontalFOV);
-
-  UFUNCTION(BlueprintCallable, Category = "Radar")
-  void SetVerticalFOV(float NewVerticalFOV);
-
-  UFUNCTION(BlueprintCallable, Category = "Radar")
-  void SetRange(float NewRange);
-
-  UFUNCTION(BlueprintCallable, Category = "Radar")
-  void SetPointsPerSecond(int NewPointsPerSecond);
+  void Set(const FRadarDescription &RadarDescription) override;
 
 protected:
 
@@ -51,17 +41,8 @@ protected:
   // virtual void PrePhysTick(float DeltaTime) override;
   virtual void PostPhysTick(UWorld *World, ELevelTick TickType, float DeltaTime) override;
 
-  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Detection")
-  float Range;
-
-  UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Detection")
-  float HorizontalFOV;
-
-  UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Detection")
-  float VerticalFOV;
-
-  UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Detection")
-  int PointsPerSecond;
+  UPROPERTY(EditAnywhere)
+  FRadarDescription Description;
 
 private:
 

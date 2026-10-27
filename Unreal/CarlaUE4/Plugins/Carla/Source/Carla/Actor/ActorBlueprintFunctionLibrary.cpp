@@ -8,6 +8,7 @@
 #include "Carla/Actor/ActorBlueprintFunctionLibrary.h"
 
 #include "Carla/Sensor/LidarDescription.h"
+#include "Carla/Sensor/RadarDescription.h"
 #include "Carla/Sensor/SceneCaptureSensor.h"
 #include "Carla/Sensor/ShaderBasedSensor.h"
 #include "Carla/Sensor/V2X/PathLossModel.h"
@@ -881,7 +882,7 @@ FActorDefinition UActorBlueprintFunctionLibrary::MakeRadarDefinition(
 }
 
 void UActorBlueprintFunctionLibrary::MakeRadarDefinition(
-    const FString &Id
+    const FString &Id,
     bool &Success,
     FActorDefinition &Definition)
 {
@@ -912,7 +913,11 @@ void UActorBlueprintFunctionLibrary::MakeRadarDefinition(
   PointsPerSecond.RecommendedValues = { TEXT("1500") };
   PointsPerSecond.bRestrictToRecommended = false;
 
-  FActorVariation 
+  FActorVariation TrackThreshold;
+  TrackThreshold.Id = TEXT("track_threshold");
+  TrackThreshold.Type = EActorAttributeType::Int;
+  TrackThreshold.RecommendedValues = { TEXT("10") };
+  TrackThreshold.bRestrictToRecommended = false;
 
   // Noise seed
   FActorVariation NoiseSeed;
@@ -934,6 +939,7 @@ void UActorBlueprintFunctionLibrary::MakeRadarDefinition(
       VerticalFOV,
       Range,
       PointsPerSecond,
+      TrackThreshold,
       NoiseSeed});
   } else {
     DEBUG_ASSERT(false);
@@ -2151,29 +2157,29 @@ void UActorBlueprintFunctionLibrary::SetIMU(
 
 void UActorBlueprintFunctionLibrary::SetRadar(
     const FActorDescription &Description,
-    ARadar *Radar)
+    FRadarDescription &Radar)
 {
   CARLA_ABFL_CHECK_ACTOR(Radar);
   constexpr float TO_CENTIMETERS = 1e2;
 
   if (Description.Variations.Contains("noise_seed"))
   {
-    Radar->SetSeed(
-      RetrieveActorAttributeToInt("noise_seed", Description.Variations, 0));
+    Radar.RandomSeed =
+      RetrieveActorAttributeToInt("noise_seed", Description.Variations, 0);
   }
   else
   {
-    Radar->SetSeed(Radar->GetRandomEngine()->GenerateRandomSeed());
+    Radar.RandomSeed = Radar->GetRandomEngine()->GenerateRandomSeed();
   }
 
-  Radar->SetHorizontalFOV(
-      RetrieveActorAttributeToFloat("horizontal_fov", Description.Variations, 30.0f));
-  Radar->SetVerticalFOV(
-      RetrieveActorAttributeToFloat("vertical_fov", Description.Variations, 30.0f));
-  Radar->SetRange(
-      RetrieveActorAttributeToFloat("range", Description.Variations, 100.0f) * TO_CENTIMETERS);
-  Radar->SetPointsPerSecond(
-      RetrieveActorAttributeToInt("points_per_second", Description.Variations, 1500));
+  Radar.HorizontalFOV = 
+      RetrieveActorAttributeToFloat("horizontal_fov", Description.Variations, 30.0f);
+  Radar.SetVerticalFOV =
+      RetrieveActorAttributeToFloat("vertical_fov", Description.Variations, 30.0f);
+  Radar.Range =
+      RetrieveActorAttributeToFloat("range", Description.Variations, 100.0f) * TO_CENTIMETERS;
+  Radar.PointsPerSecond =
+      RetrieveActorAttributeToInt("points_per_second", Description.Variations, 1500);
 }
 
 void UActorBlueprintFunctionLibrary::SetV2X(

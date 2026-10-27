@@ -3,6 +3,7 @@
 #include "Carla/Sensor/Sensor.h"
 
 #include "Carla/Actor/ActorDefinition.h"
+#include "Carla/Sensor/RadarDescription.h"
 
 #include <compiler/disable-ue4-macros.h>
 #include <carla/sensor/data/SemanticRadarData.h>
@@ -16,30 +17,16 @@ class CARLA_API ASemanticRadar : public ASensor
 {
   GENERATED_BODY()
 
-  using FRadarData = carla::sensor::data::SemanticRadarData;
+  using FSemanticRadarData = carla::sensor::data::SemanticRadarData;
 
 public:
 
   static FActorDefinition GetSensorDefinition();
 
-  ARadar(const FObjectInitializer &ObjectInitializer);
+  ASemanticRadar(const FObjectInitializer &ObjectInitializer);
 
   void Set(const FActorDescription &Description) override;
-
-  UFUNCTION(BlueprintCallable, Category = "Semantic Radar")
-  void SetHorizontalFOV(float NewHorizontalFOV);
-
-  UFUNCTION(BlueprintCallable, Category = "Semantic Radar")
-  void SetVerticalFOV(float NewVerticalFOV);
-
-  UFUNCTION(BlueprintCallable, Category = "Semantic Radar")
-  void SetRange(float NewRange);
-
-  UFUNCTION(BlueprintCallable, Category = "Semantic Radar")
-  void SetPointsPerSecond(int NewPointsPerSecond);
-
-  UFUNCTION(BlueprintCallable, Category = "Semantic Radar")
-  void SetTrackThreshold(int NewTrackThreshold);
+  void Set(const FRadarDescription &RadarDescription) override;
 
 protected:
 
@@ -48,17 +35,8 @@ protected:
   // virtual void PrePhysTick(float DeltaTime) override;
   virtual void PostPhysTick(UWorld *World, ELevelTick TickType, float DeltaTime) override;
 
-  UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Semantic Detection")
-  float Range;
-
-  UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Semantic Detection")
-  float HorizontalFOV;
-
-  UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Semantic Detection")
-  float VerticalFOV;
-
-  UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Semantic Detection")
-  int PointsPerSecond;
+  UPROPERTY(EditAnywhere)
+  FRadarDescription Description;
 
 private:
 
@@ -68,7 +46,7 @@ private:
 
   float CalculateRelativeVelocity(const FHitResult& OutHit, const FVector& RadarLocation);
 
-  FRadarData RadarData;
+  FSemanticRadarData RadarData;
 
   FCollisionQueryParams TraceParams;
 
@@ -78,6 +56,8 @@ private:
   FVector PrevLocation;
 
   struct SemanticRayData {
+    float Radius;
+    float Angle;
     bool Hitted;
     TWeakObjectPtr<AActor> HitActor;
   };

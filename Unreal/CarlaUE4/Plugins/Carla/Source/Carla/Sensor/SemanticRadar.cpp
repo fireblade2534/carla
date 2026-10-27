@@ -6,6 +6,13 @@
 #include "Carla/Actor/ActorBlueprintFunctionLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Runtime/Core/Public/Async/ParallelFor.h"
+#include "Carla/Actor/ActorRegistry.h"
+#include "Carla/Game/CarlaEpisode.h"
+#include "Carla/Vehicle/CarlaWheeledVehicle.h"
+#include "Components/BoxComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/Character.h"
+#include "Carla/Util/BoundingBoxCalculator.h"
 
 #include <compiler/disable-ue4-macros.h>
 #include <map>
@@ -33,28 +40,20 @@ ASemanticRadar::ASemanticRadar(const FObjectInitializer& ObjectInitializer)
 void ASemanticRadar::Set(const FActorDescription &ActorDescription)
 {
   Super::Set(ActorDescription);
-  UActorBlueprintFunctionLibrary::SetRadar(ActorDescription, this);
+
+  FRadarDescription RadarDescription;
+
+  UActorBlueprintFunctionLibrary::SetRadar(ActorDescription, RadarDescription);
+
+  Set(RadarDescription);
 }
 
-void ASemanticRadar::SetHorizontalFOV(float NewHorizontalFOV)
+void ASemanticRadar::Set(const RadarDescription &RadarDescription)
 {
-  HorizontalFOV = NewHorizontalFOV;
-}
+  Description = RadarDescription;
 
-void ASemanticRadar::SetVerticalFOV(float NewVerticalFOV)
-{
-  VerticalFOV = NewVerticalFOV;
-}
-
-void ASemanticRadar::SetRange(float NewRange)
-{
-  Range = NewRange;
-}
-
-void ASemanticRadar::SetPointsPerSecond(int NewPointsPerSecond)
-{
-  PointsPerSecond = NewPointsPerSecond;
-  RadarData.SetResolution(PointsPerSecond);
+  SetSeed(Description.RandomSeed);
+  RadarData.SetResolution(Description.PointsPerSecond);
 }
 
 void ASemanticRadar::BeginPlay()
@@ -112,9 +111,9 @@ void ASemanticRadar::SendLineTraces(float DeltaTime)
   const FVector TransformZAxis = ActorTransform.GetUnitAxis(EAxis::Z);
 
   // Maximum radar radius in horizontal and vertical direction
-  const float MaxRx = FMath::Tan(FMath::DegreesToRadians(HorizontalFOV * 0.5f)) * Range;
-  const float MaxRy = FMath::Tan(FMath::DegreesToRadians(VerticalFOV * 0.5f)) * Range;
-  const int NumPoints = (int)(PointsPerSecond * DeltaTime);
+  const float MaxRx = FMath::Tan(FMath::DegreesToRadians(Description.HorizontalFOV * 0.5f)) * Description.Range;
+  const float MaxRy = FMath::Tan(FMath::DegreesToRadians(Description.VerticalFOV * 0.5f)) * Description.Range;
+  const int NumPoints = (int)(Description.PointsPerSecond * DeltaTime);
 
   // Generate the parameters of the rays in a deterministic way
   Rays.clear();
@@ -164,7 +163,7 @@ void ASemanticRadar::SendLineTraces(float DeltaTime)
   }
   GetWorld()->GetPhysicsScene()->GetPxScene()->unlockRead();
 
-  TMap<TWeakObjectPtr<AActor>, std::uint32_t> VehicleHitCounts;
+  TMap<TWeakObjectPtr<AActor>, std::uint32_t> ActorHitCounts;
 
   // Write the detections in the output structure
   for (auto& ray : Rays) {
@@ -172,22 +171,68 @@ void ASemanticRadar::SendLineTraces(float DeltaTime)
       continue;
     }
 
-    AActor* HitActor = ray.HitActor.Get()
+    AActor* HitActor = ray.HitActor.Get();
 
     if (!HitActor) {
       continue;
     }
 
-    if (!HitActor->IsA<ACarlaWheeledVehicle>()) {
+    const bool IsVehicle = HitActor->IsA<ACarlaWheeledVehicle>();
+    const bool IsPedestrian = HitActor->IsA<ACharacter>();
+
+    if (!IsVehicle && !IsPedestrian)
+    {
       continue;
     }
 
-    VehicleHitCounts.FindOrAdd(ray.HitActor) += 1;
+    ActorHitCounts.FindOrAdd(ray.HitActor) += 1;
   }
 
-  for (const auto& Pair : VehicleHitCounts) {
+  for (const auto& Pair : ActorHitCounts) {
+    if (Pair.Value.Get() < Description.TrackThreshold) {
+      continue;
+    }
+    
     if (AActor* Actor = Pair.Key.Get()) {
-      
+      carla::sensor::data::SemanticRadarDetection Detection{};
+
+      const auto *ActorView = Registry.FindCarlaActor(Actor);
+      Detection.object_idx = ActorView ? ActorView->GetActorId() : 0u;
+
+      const USkeletalMeshComponent *Mesh = nullptr;
+
+      if (const auto *Vehicle = Cast<ACarlaWheeledVehicle>(Actor)) {
+        Mesh = Vehicle->GetMesh();
+      } else if (const auto *Pedestrian = Cast<ACharacter>(Actor)) {
+        Mesh = Pedestrian->GetMesh();
+      }
+
+      Detection.object_tag = Mesh ? static_cast<uint32_t>(Mesh->CustomDepthStencilValue) : 0u;
+
+      const FBoundingBox LocalBox = UBoundingBoxCalculator::GetActorBoundingBox(Actor);
+
+      const FTransform ActorTransform = Actor->GetActorTransform();
+
+      const FVector WorldCenter = ActorTransform.TransformPosition(LocalBox.Origin);
+
+      const FVector Center = SensorTransform.InverseTransformPositionNoScale(WorldCenter) * TO_METERS;
+
+      const FQuat WorldBoxRotation = ActorTransform.GetRotation() * LocalBox.Rotation.Quaternion();
+
+      const FRotator Rotation = (SensorInverseRotation * WorldBoxRotation).Rotator();
+
+      const FVector Extent = LocalBox.Extent * TO_METERS;
+
+      Detection.bbox.location = {Center.X, Center.Y, Center.Z};
+      Detection.bbox.rotation = {Rotation.Pitch, Rotation.Yaw, Rotation.Roll};
+      Detection.bbox.extent = {Extent.X, Extent.Y, Extent.Z};
+      Detection.bbox.actor_id = Detection.object_idx;
+
+      const FVector Velocity = SensorTransform.InverseTransformVectorNoScale(Actor->GetVelocity() - CurrentVelocity) * TO_METERS;
+
+      Detection.velocity = {Velocity.X, Velocity.Y, Velocity.Z};
+
+      RadarData.WriteDetection(Detection);
     }
   }
 }
