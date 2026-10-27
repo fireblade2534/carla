@@ -236,12 +236,12 @@ void ASemanticRadar::SendLineTraces(float DeltaTime)
 
       Detection.bbox.location = {Center.X, Center.Y, Center.Z};
       Detection.bbox.rotation = {Rotation.Pitch, Rotation.Yaw, Rotation.Roll};
-      Detection.bbox.extent = {Extent.X, Extent.Y, Extent.Z};
+      Detection.bbox.extent = carla::geom::Vector3D{Extent.X, Extent.Y, Extent.Z};
       Detection.bbox.actor_id = Detection.object_idx;
 
       const FVector Velocity = SensorTransform.InverseTransformVectorNoScale(Actor->GetVelocity() - CurrentVelocity) * TO_METERS;
 
-      Detection.velocity = {Velocity.X, Velocity.Y, Velocity.Z};
+      Detection.velocity = carla::geom::Vector3D{Velocity.X, Velocity.Y, Velocity.Z};
 
       RadarData.WriteDetection(Detection);
     }

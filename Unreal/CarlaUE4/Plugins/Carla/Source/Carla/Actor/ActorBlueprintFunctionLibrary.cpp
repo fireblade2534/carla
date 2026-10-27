@@ -80,33 +80,18 @@ private:
   /// Applies @a Validator to each item in @a Array. Pushes a new context to the
   /// stack for each item.
   template <typename T, typename F>
-void ARayCastSemanticLidar::ResetRecordedHits(uint32_t Channels, uint32_t MaxPointsPerChannel) {
-  RecordedHits.resize(Channels);
-
-  for (auto& hits : RecordedHits) {
-    hits.clear();
-    hits.reserve(MaxPointsPerChannel);
-  }
-}
-
-void ARayCastSemanticLidar::PreprocessRays(uint32_t Channels, uint32_t MaxPointsPerChannel) {
-  RayPreprocessCondition.resize(Channels);
-
-  for (auto& conds : RayPreprocessCondition) {
-    conds.clear();
-    conds.resize(MaxPointsPerChannel);
-    std::fill(conds.begin(), conds.end(), true);
-  }
   bool ForEach(const FString &Type, const TArray<T> &Array, F Validator)
   {
     bool Result = true;
     auto Counter = 0u;
+
     for (const auto &Item : Array)
     {
       auto Scope = Stack.PushScope(GetDisplayId(Type, Counter, Item));
       Result &= Validator(Item);
       ++Counter;
     }
+
     return Result;
   }
 
@@ -115,7 +100,9 @@ void ARayCastSemanticLidar::PreprocessRays(uint32_t Channels, uint32_t MaxPoints
   template <typename T>
   bool AreValid(const FString &Type, const TArray<T> &Array)
   {
-    return ForEach(Type, Array, [this](const auto &Item) { return IsValid(Item); });
+    return ForEach(Type, Array, [this](const auto &Item) {
+      return IsValid(Item);
+    });
   }
 
   bool IsIdValid(const FString &Id)
