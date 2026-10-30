@@ -115,6 +115,13 @@ namespace geom {
       std::vector<std::unique_ptr<Mesh>>& inout,
       std::vector<std::string>& outinfo ) const;
 
+    void GenerateLaneMarks(
+      const road::Road& road,
+      const road::LaneSection& lane_section,
+      const road::Lane& lane,
+      std::vector<std::unique_ptr<Mesh>>& inout,
+      std::vector<std::string>& outinfo ) const;
+
     // Generate for NOT center line AKA All lines but the one which id 0
     void GenerateLaneMarksForNotCenterLine(
       const road::LaneSection& lane_section,
@@ -123,7 +130,7 @@ namespace geom {
       std::vector<std::string>& outinfo ) const;
 
     // Generate marks ONLY for line with ID 0
-    void GenerateLaneMarksForCenterLine(
+    bool GenerateLaneMarksForCenterLine(
       const road::Road& road,
       const road::LaneSection& lane_section,
       const road::Lane& lane,
@@ -136,7 +143,7 @@ namespace geom {
 
     /// Parameters for the road generation
     struct RoadParameters {
-      float resolution                  =  2.0f;
+      float resolution                  =  0.5f;
       float max_road_len                = 50.0f;
       float extra_lane_width            =  1.0f;
       float wall_height                 =  0.6f;
@@ -155,14 +162,14 @@ namespace geom {
     // =========================================================================
 
     static uint32_t SelectVerticesInWidth(uint32_t default_num_vertices, road::Lane::LaneType type);
-  private:
 
     // Calculate the points on both sides of the lane mark for the specified s_current
     std::pair<geom::Vector3D, geom::Vector3D> ComputeEdgesForLanemark(
       const road::LaneSection& lane_section,
       const road::Lane& lane,
       const double s_current,
-      const double lanemark_width) const;
+      const double lanemark_width,
+      const double lateral_offset) const;
 
   };
 

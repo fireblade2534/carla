@@ -18,6 +18,128 @@
 namespace carla {
 namespace geom {
 
+  struct StripeBuilder {
+    Mesh mesh;
+    carla::road::element::LaneMarking::Type previous_type = carla::road::element::LaneMarking::Type::None;
+
+    void add_to_stripe(
+      const MeshFactory &factory,
+      double &s_current,
+      const carla::road::element::LaneMarking::Type type,
+      const carla::road::LaneSection &lane_section,
+      const carla::road::Lane &lane,
+      const carla::road::element::RoadInfoMarkTypeLine* line_ptr) {
+
+      const double s_end = lane_section.GetDistance() + lane_section.GetLength();
+      
+      if (type != carla::road::element::LaneMarking::Type::None && line_ptr != nullptr) {
+        const auto& line = *line_ptr;
+
+        std::pair<geom::Vector3D, geom::Vector3D> edges_1 = 
+              factory.ComputeEdgesForLanemark(lane_section, lane, s_current, line.GetWidth(), line.GetTOffset());
+
+        switch (type) {
+          case carla::road::element::LaneMarking::Type::Solid: {
+            size_t currentIndex = mesh.GetVertices().size() + 1;
+
+            mesh.AddVertex(edges_1.first);
+            mesh.AddVertex(edges_1.second);
+
+            if (previous_type == carla::road::element::LaneMarking::Type::Solid) {
+              mesh.AddIndex(currentIndex - 2);
+              mesh.AddIndex(currentIndex - 1);
+              mesh.AddIndex(currentIndex);
+
+              mesh.AddIndex(currentIndex - 1);
+              mesh.AddIndex(currentIndex + 1);
+              mesh.AddIndex(currentIndex);
+            }
+
+            double record_end = s_end;
+            for (const auto* record :
+                lane.GetInfos<carla::road::element::RoadInfoMarkRecord>()) {
+                const double start = record->GetDistance();
+
+                if (start >= s_current && start <= record_end) {
+                  record_end = start;
+                }
+            }
+
+            double s_next = s_current + factory.road_param.resolution;
+
+            if (s_next > record_end) {
+              s_next = record_end + 0.1;
+              
+              currentIndex = mesh.GetVertices().size() + 1;
+              mesh.AddVertex(edges_1.first);
+              mesh.AddVertex(edges_1.second);
+
+              mesh.AddIndex(currentIndex - 2);
+              mesh.AddIndex(currentIndex - 1);
+              mesh.AddIndex(currentIndex);
+
+              mesh.AddIndex(currentIndex - 1);
+              mesh.AddIndex(currentIndex + 1);
+              mesh.AddIndex(currentIndex);
+            }
+
+            s_current = s_next;
+            break;
+          }
+          case carla::road::element::LaneMarking::Type::Broken: {
+            if (s_current >= s_end) {
+              break;
+            }
+
+            size_t currentIndex = mesh.GetVertices().size() + 1;
+
+            s_current += line.GetLength();
+            if (s_current >= s_end)
+            {
+              s_current = s_end;
+            }
+
+            std::pair<geom::Vector3D, geom::Vector3D> edges_2 = 
+              factory.ComputeEdgesForLanemark(lane_section, lane, s_current, line.GetWidth(), line.GetTOffset());
+
+            mesh.AddVertex(edges_1.first);
+            mesh.AddVertex(edges_1.second);
+
+            mesh.AddVertex(edges_2.first);
+            mesh.AddVertex(edges_2.second);
+
+            mesh.AddIndex(currentIndex);
+            mesh.AddIndex(currentIndex + 1);
+            mesh.AddIndex(currentIndex + 2);
+
+            mesh.AddIndex(currentIndex + 1);
+            mesh.AddIndex(currentIndex + 3);
+            mesh.AddIndex(currentIndex + 2);
+
+            s_current += line.GetSpace();
+            break;
+          }
+        };
+      } else {
+        double next_s =
+          std::min(s_current + factory.road_param.resolution, s_end);
+
+        for (const auto* record : lane.GetInfos<carla::road::element::RoadInfoMarkRecord>()) {
+          const double record_start = record->GetDistance();
+          if (record_start > s_current && record_start < next_s) {
+            next_s = record_start;
+          }
+        }
+        s_current = next_s;
+      }
+
+      previous_type = type;
+    }
+  };
+
+
+
+
   MeshFactory::MeshFactory(rpc::OpendriveGenerationParameters params) {
     road_param.resolution = static_cast<float>(params.vertex_distance);
     road_param.max_road_len = static_cast<float>(params.max_road_length);
@@ -752,6 +874,7 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
   {
     for (auto&& lane_section : road.GetLaneSections()) {
       for (auto&& lane : lane_section.GetLanes()) {
+        std::cout << "GenerateLaneMarkForRoad Lane First: " << lane.first << ", Type: " << static_cast<int>(lane.second.GetType()) << std::endl; 
         if (lane.first != 0) {
           switch(lane.second.GetType())
           {
@@ -759,19 +882,195 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
             case road::Lane::LaneType::Parking:
             case road::Lane::LaneType::Bidirectional:
             {
-              GenerateLaneMarksForNotCenterLine(lane_section, lane.second, inout, outinfo);
-              outinfo.push_back("white");
+              GenerateLaneMarks(road, lane_section, lane.second, inout, outinfo);
               break;
             }
           }
         } else {
-          if(lane.second.GetType() == road::Lane::LaneType::None ){
-            GenerateLaneMarksForCenterLine(road, lane_section, lane.second, inout, outinfo);
-            outinfo.push_back("yellow");
-          }
+          GenerateLaneMarks(road, lane_section, lane.second, inout, outinfo);
         }
       }
     }
+  }
+
+  void MeshFactory::GenerateLaneMarks(
+    const road::Road& road,
+    const road::LaneSection& lane_section,
+    const road::Lane& lane,
+    std::vector<std::unique_ptr<Mesh>>& inout,
+    std::vector<std::string>& outinfo) const {
+    Mesh out_mesh;
+    const double s_start = lane_section.GetDistance();
+    const double s_end = lane_section.GetDistance() + lane_section.GetLength();
+    double s_current = s_start;
+    
+
+    StripeBuilder left{};
+    while (true) {
+      //Get Lane info
+      const carla::road::element::RoadInfoMarkRecord* road_info_mark = lane.GetInfo<carla::road::element::RoadInfoMarkRecord>(s_current);
+
+      if (road_info_mark != nullptr) {
+        carla::road::element::LaneMarking lane_mark_info(*road_info_mark);
+        const auto& lines = road_info_mark->GetLines();
+
+        carla::road::element::LaneMarking::Type type = carla::road::element::LaneMarking::Type::None;
+        const carla::road::element::RoadInfoMarkTypeLine* line = nullptr;
+        switch (lane_mark_info.type) {
+          case carla::road::element::LaneMarking::Type::SolidBroken:
+          case carla::road::element::LaneMarking::Type::SolidSolid: {
+            type = carla::road::element::LaneMarking::Type::Solid;
+            line = lines[0].get();
+            break;
+          }
+          case carla::road::element::LaneMarking::Type::BrokenSolid:
+          case carla::road::element::LaneMarking::Type::BrokenBroken: {
+            type = carla::road::element::LaneMarking::Type::Broken;
+            line = lines[0].get();
+            break;
+          }
+        }
+
+        bool exit_loop = false;
+        if (s_current >= s_end) {
+          exit_loop = true;
+        }
+
+        left.add_to_stripe(
+          *this,
+          s_current,
+          type,
+          lane_section,
+          lane,
+          line
+        );
+
+        if (s_current >= s_end) {
+          s_current = s_end;
+        }
+
+        if (exit_loop) {
+          break;
+        }
+      }
+    }
+    
+    s_current = s_start;
+    StripeBuilder center{};
+    while (true) {
+      //Get Lane info
+      const carla::road::element::RoadInfoMarkRecord* road_info_mark = lane.GetInfo<carla::road::element::RoadInfoMarkRecord>(s_current);
+
+      if (road_info_mark != nullptr) {
+        carla::road::element::LaneMarking lane_mark_info(*road_info_mark);
+        const auto& lines = road_info_mark->GetLines();
+
+        carla::road::element::LaneMarking::Type type = carla::road::element::LaneMarking::Type::None;
+        const carla::road::element::RoadInfoMarkTypeLine* line = nullptr;
+        switch (lane_mark_info.type) {
+          case carla::road::element::LaneMarking::Type::Solid: {
+            type = carla::road::element::LaneMarking::Type::Solid;
+            line = lines[0].get();
+            break;
+          }
+          case carla::road::element::LaneMarking::Type::Broken: {
+            type = carla::road::element::LaneMarking::Type::Broken;
+            line = lines[0].get();
+            break;
+          }
+        }
+
+        bool exit_loop = false;
+        if (s_current >= s_end) {
+          exit_loop = true;
+        }
+
+        center.add_to_stripe(
+          *this,
+          s_current,
+          type,
+          lane_section,
+          lane,
+          line
+        );
+
+        if (s_current >= s_end) {
+          s_current = s_end;
+        }
+
+        if (exit_loop) {
+          break;
+        }
+      }
+    }
+
+    s_current = s_start;
+    StripeBuilder right{};
+    while (true) {
+      //Get Lane info
+      const carla::road::element::RoadInfoMarkRecord* road_info_mark = lane.GetInfo<carla::road::element::RoadInfoMarkRecord>(s_current);
+
+      if (road_info_mark != nullptr) {
+        carla::road::element::LaneMarking lane_mark_info(*road_info_mark);
+        const auto& lines = road_info_mark->GetLines();
+
+        carla::road::element::LaneMarking::Type type = carla::road::element::LaneMarking::Type::None;
+        const carla::road::element::RoadInfoMarkTypeLine* line = nullptr;
+        switch (lane_mark_info.type) {
+          case carla::road::element::LaneMarking::Type::BrokenSolid:
+          case carla::road::element::LaneMarking::Type::SolidSolid: {
+            type = carla::road::element::LaneMarking::Type::Solid;
+            line = lines[1].get();
+            break;
+          }
+          case carla::road::element::LaneMarking::Type::SolidBroken:
+          case carla::road::element::LaneMarking::Type::BrokenBroken: {
+            type = carla::road::element::LaneMarking::Type::Broken;
+            line = lines[1].get();
+            break;
+          }
+        }
+
+                bool exit_loop = false;
+        if (s_current >= s_end) {
+          exit_loop = true;
+        }
+
+        right.add_to_stripe(
+          *this,
+          s_current,
+          type,
+          lane_section,
+          lane,
+          line
+        );
+
+        if (s_current >= s_end) {
+          s_current = s_end;
+        }
+
+        if (exit_loop) {
+          break;
+        }
+      }
+    }
+
+    if (left.mesh.IsValid()) {
+      inout.push_back(std::make_unique<Mesh>(left.mesh));
+      outinfo.push_back("yellow"); // Hardcode color for now
+    }
+
+    if (center.mesh.IsValid()) {
+      inout.push_back(std::make_unique<Mesh>(center.mesh));
+      outinfo.push_back("yellow"); // Hardcode color for now
+    }
+
+    if (right.mesh.IsValid()) {
+      inout.push_back(std::make_unique<Mesh>(right.mesh));
+      outinfo.push_back("yellow"); // Hardcode color for now
+    }
+
+    return;
   }
 
   void MeshFactory::GenerateLaneMarksForNotCenterLine(
@@ -783,8 +1082,6 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
     const double s_start = lane_section.GetDistance();
     const double s_end = lane_section.GetDistance() + lane_section.GetLength();
     double s_current = s_start;
-    std::vector<geom::Vector3D> vertices;
-    std::vector<size_t> indices;
 
     do {
       //Get Lane info
@@ -797,7 +1094,7 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
             size_t currentIndex = out_mesh.GetVertices().size() + 1;
 
             std::pair<geom::Vector3D, geom::Vector3D> edges = 
-              ComputeEdgesForLanemark(lane_section, lane, s_current, lane_mark_info.width);
+              ComputeEdgesForLanemark(lane_section, lane, s_current, lane_mark_info.width, 0.0);
 
             out_mesh.AddVertex(edges.first);
             out_mesh.AddVertex(edges.second);
@@ -817,7 +1114,7 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
             size_t currentIndex = out_mesh.GetVertices().size() + 1;
 
             std::pair<geom::Vector3D, geom::Vector3D> edges = 
-              ComputeEdgesForLanemark(lane_section, lane, s_current, lane_mark_info.width);
+              ComputeEdgesForLanemark(lane_section, lane, s_current, lane_mark_info.width, 0.0);
 
             out_mesh.AddVertex(edges.first);
             out_mesh.AddVertex(edges.second);
@@ -828,7 +1125,7 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
               s_current = s_end;
             }
 
-            edges = ComputeEdgesForLanemark(lane_section, lane, s_current, lane_mark_info.width);
+            edges = ComputeEdgesForLanemark(lane_section, lane, s_current, lane_mark_info.width, 0.0);
 
             out_mesh.AddVertex(edges.first);
             out_mesh.AddVertex(edges.second);
@@ -891,7 +1188,7 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
         carla::road::element::LaneMarking lane_mark_info(*road_info_mark);
         
         std::pair<geom::Vector3D, geom::Vector3D> edges = 
-              ComputeEdgesForLanemark(lane_section, lane, s_end, lane_mark_info.width);
+              ComputeEdgesForLanemark(lane_section, lane, s_end, lane_mark_info.width, 0.0);
 
         out_mesh.AddVertex(edges.first);
         out_mesh.AddVertex(edges.second);
@@ -900,7 +1197,9 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
     }
   }
 
-  void MeshFactory::GenerateLaneMarksForCenterLine(
+
+
+  bool MeshFactory::GenerateLaneMarksForCenterLine(
     const road::Road& road,
     const road::LaneSection& lane_section,
     const road::Lane& lane,
@@ -919,7 +1218,9 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
       const carla::road::element::RoadInfoMarkRecord* road_info_mark = lane.GetInfo<carla::road::element::RoadInfoMarkRecord>(s_current);
       if (road_info_mark != nullptr) {
         carla::road::element::LaneMarking lane_mark_info(*road_info_mark);
-
+        
+        std::cout << "GenerateLaneMarksForCenterLine Type: " << static_cast<int>(lane_mark_info.type) << std::endl;
+        
         switch (lane_mark_info.type) {
           case carla::road::element::LaneMarking::Type::Solid: {
             size_t currentIndex = out_mesh.GetVertices().size() + 1;
@@ -952,7 +1253,7 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
             size_t currentIndex = out_mesh.GetVertices().size() + 1;
 
             std::pair<geom::Vector3D, geom::Vector3D> edges = 
-              ComputeEdgesForLanemark(lane_section, lane, s_current, lane_mark_info.width);
+              ComputeEdgesForLanemark(lane_section, lane, s_current, lane_mark_info.width, 0.0);
             
             out_mesh.AddVertex(edges.first);
             out_mesh.AddVertex(edges.second);
@@ -962,7 +1263,7 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
               s_current = s_end;
             }
 
-            edges = ComputeEdgesForLanemark(lane_section, lane, s_current, lane_mark_info.width);
+            edges = ComputeEdgesForLanemark(lane_section, lane, s_current, lane_mark_info.width, 0.0);
 
             out_mesh.AddVertex(edges.first);
             out_mesh.AddVertex(edges.second);
@@ -1039,7 +1340,11 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
 
       }
       inout.push_back(std::make_unique<Mesh>(out_mesh));
+
+      return true;
     }
+
+    return false;
   }
 
   struct VertexWeight {
@@ -1193,9 +1498,10 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
       const road::LaneSection& lane_section,
       const road::Lane& lane,
       const double s_current,
-      const double lanemark_width) const {
+      const double lanemark_width,
+      const double lateral_offset) const {
     std::pair<geom::Vector3D, geom::Vector3D> edges =
-      lane.GetCornerPositions(s_current, road_param.extra_lane_width);
+      lane.GetCornerPositions(s_current, 0.0f);
 
     geom::Vector3D director;
     if (edges.first != edges.second) {
@@ -1213,8 +1519,15 @@ std::map<road::Lane::LaneType , std::vector<std::unique_ptr<Mesh>>> MeshFactory:
         }
       }
     }
-    geom::Vector3D endmarking = edges.first + director * lanemark_width;
-    return std::make_pair(edges.first, endmarking);
+
+    const geom::Vector3D boundary = lane.GetId() > 0 ? edges.second : edges.first;
+
+    const geom::Vector3D stripe_center = boundary + director * lateral_offset;
+
+    const geom::Vector3D edge_a = stripe_center - director * (lanemark_width * 0.5);
+    const geom::Vector3D edge_b = stripe_center + director * (lanemark_width * 0.5);
+
+    return std::make_pair(edge_a, edge_b);
   }
 
 } // namespace geom

@@ -1,6 +1,9 @@
+.kdev4
 .vscode
 Content
+DerivedDataCache
 Intermediate
+Saved
 Plugins/Carla/CarlaDependencies
 Plugins/Carla/Content
 Plugins/Carla/Intermediate
@@ -10,6 +13,7 @@ Plugins/CarlaTools/Intermediate
 Plugins/Converters/MDL/Content
 Plugins/Converters/MDL/Dependencies
 Plugins/Converters/MDL/Intermediate
+Plugins/Converters/MDL/Library
 Plugins/Converters/MDL/Licenses
 Plugins/Converters/MDL/MDL
 Plugins/Converters/SimReady/Content

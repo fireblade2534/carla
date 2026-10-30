@@ -141,6 +141,10 @@ namespace element {
       return _lines;
     }
 
+    const std::vector<std::unique_ptr<RoadInfoMarkTypeLine>> &GetLines() const {
+      return _lines;
+    }
+
   private:
 
     const int _road_mark_id;

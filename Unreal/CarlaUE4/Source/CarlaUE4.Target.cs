@@ -12,6 +12,9 @@ public class CarlaUE4Target : TargetRules
 		Type = TargetType.Game;
 		ExtraModuleNames.Add("CarlaUE4");
 
+    bOverrideBuildEnvironment = true;
+    AdditionalCompilerArguments += " -w";
+
     string ConfigDir = Path.GetDirectoryName(ProjectFile.ToString()) + "/Config/";
     string OptionalModulesFile = Path.Combine(ConfigDir, "OptionalModules.ini");
     string[] text = System.IO.File.ReadAllLines(OptionalModulesFile);

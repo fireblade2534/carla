@@ -32,6 +32,7 @@
 #include <queue>
 #include <set>
 #include <cmath>
+#include <cstdio>
 
 namespace carla {
 namespace road {
@@ -1429,11 +1430,14 @@ namespace road {
     const geom::Vector3D& maxpos,
     std::vector<std::string>& outinfo ) const
   {
+    
     std::vector<std::unique_ptr<geom::Mesh>> LineMarks;
     geom::MeshFactory mesh_factory(params);
 
     const std::vector<RoadId> RoadsIDToGenerate = FilterRoadsByPosition(minpos, maxpos);
     for ( RoadId id : RoadsIDToGenerate ) {
+      std::cout << "Generating road markings for: " << id << std::endl;
+
       const auto& road = _data.GetRoads().at(id);
       if (!road.IsJunction()) {
         mesh_factory.GenerateLaneMarkForRoad(road, LineMarks, outinfo);

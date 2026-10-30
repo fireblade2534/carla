@@ -18,6 +18,9 @@
 
 #include "OpenDriveGenerator.generated.h"
 
+class UMaterialInterface;
+
+
 UCLASS()
 class CARLA_API AProceduralMeshActor : public AActor
 {
@@ -57,6 +60,9 @@ public:
   /// Generates spawn points along the road.
   void GenerateSpawnPoints();
 
+  /// Generate lane markings
+  void GenerateLaneMarkings();
+
   void GenerateAll();
 
 protected:
@@ -77,4 +83,18 @@ protected:
   UPROPERTY(EditAnywhere)
   TArray<AActor *> ActorMeshList;
 
+  UPROPERTY(Category = "OpenDRIVE Markings", EditAnywhere)
+  TSoftObjectPtr<UMaterialInterface> LaneMarkingWhiteMaterial =
+      TSoftObjectPtr<UMaterialInterface>(
+          FSoftObjectPath(TEXT(
+              "/Game/Carla/Static/GenericMaterials/LaneMarking/M_MarkingLane_W.M_MarkingLane_W")));
+
+  UPROPERTY(Category = "OpenDRIVE Markings", EditAnywhere)
+  TSoftObjectPtr<UMaterialInterface> LaneMarkingYellowMaterial =
+      TSoftObjectPtr<UMaterialInterface>(
+          FSoftObjectPath(TEXT(
+              "/Game/Carla/Static/GenericMaterials/LaneMarking/M_MarkingLane_Y.M_MarkingLane_Y")));
+
+  UPROPERTY(Category = "OpenDRIVE Markings", EditAnywhere)
+  float DecalZOffset = 0.5f;
 };
