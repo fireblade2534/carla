@@ -22,6 +22,26 @@ namespace geom {
     Mesh mesh;
     carla::road::element::LaneMarking::Type previous_type = carla::road::element::LaneMarking::Type::None;
 
+    double get_record_ending(
+      const double s_current,
+      const carla::road::LaneSection &lane_section,
+      const carla::road::Lane &lane) {
+      
+      const double s_end = lane_section.GetDistance() + lane_section.GetLength();
+
+      double record_end = s_end;
+      for (const auto* record :
+          lane.GetInfos<carla::road::element::RoadInfoMarkRecord>()) {
+          const double start = record->GetDistance();
+
+          if (start > s_current && start < record_end) {
+            record_end = start;
+          }
+      }
+
+      return record_end;
+    }
+
     void add_to_stripe(
       const MeshFactory &factory,
       double &s_current,
@@ -55,24 +75,18 @@ namespace geom {
               mesh.AddIndex(currentIndex);
             }
 
-            double record_end = s_end;
-            for (const auto* record :
-                lane.GetInfos<carla::road::element::RoadInfoMarkRecord>()) {
-                const double start = record->GetDistance();
-
-                if (start >= s_current && start <= record_end) {
-                  record_end = start;
-                }
-            }
-
+            double record_end = get_record_ending(s_current, lane_section, lane);
             double s_next = s_current + factory.road_param.resolution;
 
             if (s_next > record_end) {
-              s_next = record_end + 0.1;
+              s_next = record_end + 0.01;
+
+              std::pair<geom::Vector3D, geom::Vector3D> edges_2 = 
+              factory.ComputeEdgesForLanemark(lane_section, lane, s_next, line.GetWidth(), line.GetTOffset());
               
               currentIndex = mesh.GetVertices().size() + 1;
-              mesh.AddVertex(edges_1.first);
-              mesh.AddVertex(edges_1.second);
+              mesh.AddVertex(edges_2.first);
+              mesh.AddVertex(edges_2.second);
 
               mesh.AddIndex(currentIndex - 2);
               mesh.AddIndex(currentIndex - 1);
@@ -122,22 +136,16 @@ namespace geom {
         };
       } else {
         double next_s =
-          std::min(s_current + factory.road_param.resolution, s_end);
+          std::min(s_current + factory.road_param.resolution, 
+          get_record_ending(s_current, lane_section, lane));
 
-        for (const auto* record : lane.GetInfos<carla::road::element::RoadInfoMarkRecord>()) {
-          const double record_start = record->GetDistance();
-          if (record_start > s_current && record_start < next_s) {
-            next_s = record_start;
-          }
-        }
+        
         s_current = next_s;
       }
 
       previous_type = type;
     }
   };
-
-
 
 
   MeshFactory::MeshFactory(rpc::OpendriveGenerationParameters params) {

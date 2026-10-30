@@ -143,7 +143,7 @@ namespace geom {
 
     /// Parameters for the road generation
     struct RoadParameters {
-      float resolution                  =  0.5f;
+      float resolution                  =  0.25f;
       float max_road_len                = 50.0f;
       float extra_lane_width            =  1.0f;
       float wall_height                 =  0.6f;
