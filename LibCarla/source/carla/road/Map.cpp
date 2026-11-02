@@ -29,7 +29,11 @@
 #include <chrono>
 #include <thread>
 #include <iomanip>
+#include <algorithm>
+#include <iostream>
 #include <queue>
+#include <limits>
+#include <vector>
 #include <set>
 #include <cmath>
 #include <cstdio>
@@ -1182,6 +1186,336 @@ namespace road {
     return out_mesh;
   }
 
+  static geom::Mesh BuildJunctionPavement(
+    const Map &map,
+    const Junction &junction,
+    double step) {
+    using V = geom::Vector3D;
+    using LT = Lane::LaneType;
+    using Height = element::RoadInfoLaneHeight;
+    using Chain = std::vector<V>;
+
+    auto Unsupported = [&](const char *reason) {
+      std::cerr << "[junction pavement] junction " << junction.GetId()
+                << ": " << reason << "; keeping existing lane meshes"
+                << std::endl;
+      return geom::Mesh{};
+    };
+
+    auto IncludeInPavementOutline = [&](const Lane &lane, double s) {
+      if (lane.GetId() == 0 || lane.HasHeightOffset(s)) {
+        return false;
+      }
+
+      switch (lane.GetType()) {
+        case LT::Driving:
+        case LT::Parking:
+        case LT::Bidirectional:
+        case LT::Shoulder:
+        case LT::Biking:
+        case LT::None:
+          return true;
+        default:
+          return false;
+      }
+    };
+
+    const auto &roads = map.GetRoads();
+    std::vector<Chain> chains;
+    std::set<RoadId> connecting, arms;
+
+    auto Dist2 = [](const V &a, const V &b) {
+      const double dx = a.x - b.x;
+      const double dy = a.y - b.y;
+      return dx * dx + dy * dy;
+    };
+
+    for (const auto &entry : junction.GetConnections()) {
+    const auto &c = entry.second;
+    connecting.insert(c.connecting_road);
+    arms.insert(c.incoming_road);
+  }
+
+  // Collect the pavement-facing edges of the exported curbs.
+  for (RoadId id : connecting) {
+    const auto &road = roads.at(id);
+    arms.insert(road.GetPredecessor());
+    arms.insert(road.GetSuccessor());
+
+    for (const auto &section : road.GetLaneSections()) {
+      const auto &lanes = section.GetLanes();
+
+      for (const auto &entry : lanes) {
+        const auto &lane = entry.second;
+        const int lid = lane.GetId();
+
+        if (lid == 0) {
+          continue;
+        }
+
+        const int sign = lid > 0 ? 1 : -1;
+        const auto inside = lanes.find(lid - sign);
+        const auto outside = lanes.find(lid + sign);
+
+        const auto IsSidewalk = [&](decltype(inside) it) {
+          return it != lanes.end() &&
+              it->second.GetType() == LT::Sidewalk;
+        };
+
+        const double a = lane.GetDistance();
+        const double b = a + lane.GetLength();
+        const double mid = (a + b) * 0.5;
+        bool inner_edge;
+
+        if (lane.GetType() == LT::Shoulder &&
+            lane.HasHeightOffset(mid) &&
+            IsSidewalk(outside) != IsSidewalk(inside)) {
+          // Choose the curb edge opposite its adjacent sidewalk.
+          inner_edge = IsSidewalk(outside);
+        } else if (lane.GetType() == LT::Sidewalk &&
+                   inside != lanes.end() &&
+                   IncludeInPavementOutline(inside->second, mid)) {
+          inner_edge = true;
+        } else {
+          continue;
+        }
+
+        Chain chain;
+
+        auto Sample = [&](double s) {
+          const auto edges = lane.GetCornerPositions(s, 0.0f);
+          V p = (inner_edge == (lid > 0))
+              ? edges.first
+              : edges.second;
+
+          // Convert the raised curb edge back to pavement height.
+          const auto *h = lane.GetInfo<Height>(s);
+          p.z -= h
+              ? (inner_edge ? h->GetInner() : h->GetOuter())
+              : (lane.GetType() == LT::Sidewalk ? 0.1524 : 0.0);
+
+          chain.push_back(p);
+        };
+
+        for (double s = a; s < b; s += step) {
+          Sample(s);
+        }
+
+        // Stay within this section's offset/width records.
+        Sample(std::nextafter(b, a));
+        chains.push_back(std::move(chain));
+      }
+    }
+  }
+
+  // Add a cross-section across every road entrance.
+  for (RoadId id : arms) {
+    const auto it = roads.find(id);
+    if (it == roads.end() || it->second.IsJunction()) {
+      continue;
+    }
+
+    const auto &arm = it->second;
+    const V start = arm.GetDirectedPointIn(0.0).location;
+    const V end = arm.GetDirectedPointIn(arm.GetLength()).location;
+
+    double ds = std::numeric_limits<double>::max();
+    double de = ds;
+
+    for (RoadId cid : connecting) {
+      const auto &r = roads.at(cid);
+      for (double s : {0.0, r.GetLength()}) {
+        const V p = r.GetDirectedPointIn(s).location;
+        ds = std::min(ds, Dist2(start, p));
+        de = std::min(de, Dist2(end, p));
+      }
+    }
+
+    const double s = ds <= de ? 0.0 : arm.GetLength();
+    Chain points;
+
+    for (const Lane *lane : arm.GetLanesByDistance(s)) {
+      if (!IncludeInPavementOutline(*lane, s)) {
+        continue;
+      }
+
+      const auto edges = lane->GetCornerPositions(s, 0.0f);
+      points.push_back(edges.first);
+      points.push_back(edges.second);
+    }
+
+    double longest = 0.0;
+    Chain mouth;
+
+    for (const auto &p : points) {
+      for (const auto &q : points) {
+        const double d = Dist2(p, q);
+        if (d > longest) {
+          longest = d;
+          mouth = {p, q};
+        }
+      }
+    }
+
+    if (longest > 1e-6) {
+      chains.push_back(std::move(mouth));
+    }
+  }
+
+  geom::Mesh result;
+  if (chains.empty()) {
+    return result;
+  }
+
+  // Stitch the chains into one closed perimeter.
+  constexpr double snap2 = 0.05 * 0.05;
+  Chain polygon = std::move(chains.back());
+  chains.pop_back();
+
+  while (Dist2(polygon.back(), polygon.front()) > snap2) {
+    size_t match = chains.size();
+    bool reverse = false;
+
+    for (size_t i = 0; i < chains.size(); ++i) {
+      const bool front =
+          Dist2(polygon.back(), chains[i].front()) <= snap2;
+      const bool back =
+          Dist2(polygon.back(), chains[i].back()) <= snap2;
+
+      if (!front && !back) {
+        continue;
+      }
+
+      if (match != chains.size()) {
+        return Unsupported("ambiguous perimeter");
+      }
+
+      match = i;
+      reverse = back;
+    }
+
+    if (match == chains.size()) {
+      return Unsupported("open perimeter");
+    }
+
+    auto &next = chains[match];
+    if (reverse) {
+      std::reverse(next.begin(), next.end());
+    }
+
+    polygon.insert(polygon.end(), next.begin() + 1, next.end());
+    chains.erase(chains.begin() + match);
+  }
+
+  if (!chains.empty()) {
+    return Unsupported(
+        "multiple perimeters; islands need separate handling");
+  }
+
+  polygon.pop_back(); // remove the duplicated closing point
+
+  auto Cross = [](const V &a, const V &b, const V &c) {
+    return double(b.x - a.x) * (c.y - a.y) -
+           double(b.y - a.y) * (c.x - a.x);
+  };
+
+  // Remove duplicate and collinear vertices.
+  bool changed = true;
+  while (changed && polygon.size() > 3) {
+    changed = false;
+
+    for (size_t i = 0; i < polygon.size(); ++i) {
+      const V &a = polygon[
+          (i + polygon.size() - 1) % polygon.size()];
+      const V &b = polygon[i];
+      const V &c = polygon[(i + 1) % polygon.size()];
+
+      if (Dist2(a, b) < 1e-10 ||
+          std::abs(Cross(a, b, c)) < 1e-8) {
+        polygon.erase(polygon.begin() + i);
+        changed = true;
+        break;
+      }
+    }
+  }
+
+  if (polygon.size() < 3) {
+    return Unsupported("degenerate perimeter");
+  }
+
+  double area = 0.0;
+  for (size_t i = 0; i < polygon.size(); ++i) {
+    const auto &a = polygon[i];
+    const auto &b = polygon[(i + 1) % polygon.size()];
+    area += double(a.x) * b.y - double(b.x) * a.y;
+  }
+
+  if (area < 0.0) {
+    std::reverse(polygon.begin(), polygon.end());
+  }
+
+  std::vector<size_t> remaining;
+  for (size_t i = 0; i < polygon.size(); ++i) {
+    remaining.push_back(i);
+  }
+
+  result.AddMaterial("road");
+
+  for (auto p : polygon) {
+    p.z -= 0.005f; // place the new surface beneath existing lane meshes
+    result.AddVertex(p);
+  }
+
+  // Ear clipping: triangulate the concave outline.
+  while (remaining.size() > 2) {
+    bool clipped = false;
+
+    for (size_t i = 0; i < remaining.size(); ++i) {
+      const size_t a = remaining[
+          (i + remaining.size() - 1) % remaining.size()];
+      const size_t b = remaining[i];
+      const size_t c = remaining[(i + 1) % remaining.size()];
+
+      if (Cross(polygon[a], polygon[b], polygon[c]) <= 1e-10) {
+        continue;
+      }
+
+      bool occupied = false;
+      for (size_t p : remaining) {
+        if (p == a || p == b || p == c) {
+          continue;
+        }
+
+        if (Cross(polygon[a], polygon[b], polygon[p]) >= -1e-10 &&
+            Cross(polygon[b], polygon[c], polygon[p]) >= -1e-10 &&
+            Cross(polygon[c], polygon[a], polygon[p]) >= -1e-10) {
+          occupied = true;
+          break;
+        }
+      }
+
+      if (occupied) {
+        continue;
+      }
+
+      // CARLA Mesh indices are 1-based. Match the lane mesh winding.
+      result.AddIndex(a + 1);
+      result.AddIndex(b + 1);
+      result.AddIndex(c + 1);
+
+      remaining.erase(remaining.begin() + i);
+      clipped = true;
+      break;
+    }
+
+    if (!clipped) {
+      return Unsupported("cannot triangulate perimeter");
+    }
+  }
+
+  result.EndMaterial();
+  return result;
+  }
 
   std::vector<std::unique_ptr<geom::Mesh>> Map::GenerateChunkedMesh(
       const rpc::OpendriveGenerationParameters& params) const {
@@ -1213,7 +1547,7 @@ namespace road {
         for (auto &&lane_section : road.GetLaneSections()) {
           for (auto &&lane_pair : lane_section.GetLanes()) {
             const auto &lane = lane_pair.second;
-            if (lane.GetType() != road::Lane::LaneType::Sidewalk) {
+            if (!lane.HasHeightOffset()) {
               lane_meshes.push_back(mesh_factory.Generate(lane));
             } else {
               sidewalk_lane_meshes.push_back(mesh_factory.Generate(lane));
@@ -1236,6 +1570,21 @@ namespace road {
           *junction_mesh += *lane;
         }
         out_mesh_list.push_back(std::move(junction_mesh));
+      }
+
+      auto pavement = BuildJunctionPavement(
+        *this,
+        junction,
+        mesh_factory.road_param.resolution);
+
+      if (!pavement.GetVertices().empty()) {
+        std::cerr << "[junction pavement] junction " << junction.GetId()
+                  << " vertices=" << pavement.GetVertices().size()
+                  << " triangles=" << pavement.GetIndexes().size() / 3
+                  << std::endl;
+
+        out_mesh_list.push_back(
+            std::make_unique<geom::Mesh>(std::move(pavement)));
       }
     }
 
@@ -1435,13 +1784,12 @@ namespace road {
     geom::MeshFactory mesh_factory(params);
 
     const std::vector<RoadId> RoadsIDToGenerate = FilterRoadsByPosition(minpos, maxpos);
-    for ( RoadId id : RoadsIDToGenerate ) {
-      std::cout << "Generating road markings for: " << id << std::endl;
+    for (const auto& pair : _data.GetRoads()) {
+      //std::cout << "Generating road markings for: " << id << std::endl;
 
-      const auto& road = _data.GetRoads().at(id);
-      if (!road.IsJunction()) {
-        mesh_factory.GenerateLaneMarkForRoad(road, LineMarks, outinfo);
-      }
+      //if (!road.IsJunction()) {
+      mesh_factory.GenerateLaneMarkForRoad(pair.second, LineMarks, outinfo);
+      //}
     }
 
     return std::move(LineMarks);

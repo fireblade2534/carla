@@ -10,10 +10,12 @@
 #include "carla/geom/Transform.h"
 #include "carla/road/InformationSet.h"
 #include "carla/road/RoadTypes.h"
+#include "carla/road/element/RoadInfoLaneHeight.h"
 
 #include <vector>
 #include <iostream>
 #include <memory>
+#include <cmath>
 
 namespace carla {
 namespace road {
@@ -120,6 +122,10 @@ namespace road {
       const double s, const float extra_width = 0.f) const;
 
     bool IsPositiveDirection() const;
+
+    bool HasHeightOffset() const;
+
+    bool HasHeightOffset(double s) const;
 
   private:
 

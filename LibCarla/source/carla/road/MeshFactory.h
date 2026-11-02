@@ -120,22 +120,7 @@ namespace geom {
       const road::LaneSection& lane_section,
       const road::Lane& lane,
       std::vector<std::unique_ptr<Mesh>>& inout,
-      std::vector<std::string>& outinfo ) const;
-
-    // Generate for NOT center line AKA All lines but the one which id 0
-    void GenerateLaneMarksForNotCenterLine(
-      const road::LaneSection& lane_section,
-      const road::Lane& lane,
-      std::vector<std::unique_ptr<Mesh>>& inout,
-      std::vector<std::string>& outinfo ) const;
-
-    // Generate marks ONLY for line with ID 0
-    bool GenerateLaneMarksForCenterLine(
-      const road::Road& road,
-      const road::LaneSection& lane_section,
-      const road::Lane& lane,
-      std::vector<std::unique_ptr<Mesh>>& inout,
-      std::vector<std::string>& outinfo ) const;
+      std::vector<std::string>& outinfo) const;
       
     // =========================================================================
     // -- Generation parameters ------------------------------------------------

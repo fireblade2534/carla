@@ -92,6 +92,42 @@ namespace road {
         return false;
       }
     }
+
+    for (const auto& pair : GetLaneSection()->GetLanes()) {
+      const LaneId id = pair.first;
+
+      const bool contributes =
+      GetId() > 0
+          ? (id > 0 && id <= GetId())
+          : (id < 0 && id >= GetId());
+      
+      if (!contributes) {
+        continue;
+      }
+
+      const auto widths = pair.second.GetInfos<element::RoadInfoLaneWidth>();
+
+      if (widths.empty()) {
+        return false;
+      }
+
+      const double constant_width = widths.front()->GetPolynomial().GetA();
+
+      for (const auto* width : widths) {
+        const auto& polynomial = width->GetPolynomial();
+
+        if (polynomial.GetB() != 0.0 ||
+            polynomial.GetC() != 0.0 ||
+            polynomial.GetD() != 0.0) {
+          return false;
+        }
+
+        if (polynomial.GetA() != constant_width) {
+          return false;
+        }
+      }
+    }
+
     return true;
   }
 
@@ -252,8 +288,19 @@ namespace road {
     dp_r.location.y *= -1;
     dp_l.location.y *= -1;
 
+    const auto *height = GetInfo<element::RoadInfoLaneHeight>(s);
+
     // Apply an offset to the Sidewalks
-    if (GetType() == LaneType::Sidewalk) {
+    if (height != nullptr) {
+      if (GetId() > 0) {
+        dp_r.location.z += static_cast<float>(height->GetInner());
+        dp_l.location.z += static_cast<float>(height->GetOuter());
+      } else {
+        dp_r.location.z += static_cast<float>(height->GetOuter());
+        dp_l.location.z += static_cast<float>(height->GetInner());
+      }
+
+    } else if (GetType() == LaneType::Sidewalk) {
       // RoadRunner doesn't export it right now and as a workarround where 15.24 cm
       // is the exact height that match with most of the RoadRunner sidewalks
       dp_r.location.z += 0.1524f;
@@ -275,5 +322,31 @@ namespace road {
     return false;
   }
 
+  bool Lane::HasHeightOffset() const {
+    if (GetType() == LaneType::Sidewalk) {
+      return true;
+    }
+
+    for (const auto *height : GetInfos<element::RoadInfoLaneHeight>()) {
+      if (std::abs(height->GetInner()) > 1e-6 ||
+          std::abs(height->GetOuter()) > 1e-6) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  bool Lane::HasHeightOffset(double s) const {
+    if (GetType() == LaneType::Sidewalk) {
+      return true;
+    }
+
+    const auto *height = GetInfo<element::RoadInfoLaneHeight>(s);
+
+    return height != nullptr &&
+      (std::abs(height->GetInner()) > 1e-6 ||
+       std::abs(height->GetOuter()) > 1e-6);
+  }
 } // road
 } // carla

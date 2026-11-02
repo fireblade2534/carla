@@ -118,7 +118,7 @@ namespace parser {
               length,
               space,
               t,
-              s_offset + s,
+              s_offset + lane_road_mark.attribute("sOffset").as_double() + s,
               rule,
               width);
         }
