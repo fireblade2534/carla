@@ -13,7 +13,6 @@ Plugins/Carla/DerivedDataCache
 Plugins/Carla/Intermediate
 Plugins/Carla/Saved
 
-/Content
 Config/CarlaSettings.ini
 Config/DefaultEditor.ini
 Config/CarSimConfig.ini
@@ -23,3 +22,17 @@ Config/CarSimConfig.ini
 .vscode
 CMakeLists.txt
 Makefile
+
+!/Content/
+/Content/*
+
+!/Content/Carla/
+/Content/Carla/*
+
+!/Content/Carla/Blueprints/
+/Content/Carla/Blueprints/*
+
+!/Content/Carla/Blueprints/TrafficLight/
+/Content/Carla/Blueprints/TrafficLight/*
+
+!/Content/Carla/Blueprints/TrafficLight/BP_OpenDriveHeadOnly.uasset

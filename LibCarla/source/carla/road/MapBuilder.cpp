@@ -938,9 +938,12 @@ namespace road {
         continue;
       }
       auto transform = ComputeSignalTransform(signal, _map_data);
-      if (SignalType::IsTrafficLight(signal->GetType())) {
+
+      const bool use_authored_pose = signal->GetName() == "Signal_3Light_Post01";
+
+      if (SignalType::IsTrafficLight(signal->GetType()) && !use_authored_pose) {
         transform.location = transform.location +
-            geom::Location(transform.GetForwardVector()*0.25);
+            geom::Location(transform.GetForwardVector() * 0.25);
       }
       signal->_transform = transform;
     }
@@ -1191,6 +1194,11 @@ void MapBuilder::CreateController(
   void MapBuilder::CheckSignalsOnRoads(Map &map) {
     for (auto& signal_pair : map._data._signals) {
       auto& signal = signal_pair.second;
+
+      if (signal->GetName() == "Signal_3Light_Post01") {
+        continue;
+      }
+      
       auto signal_position = signal->GetTransform().location;
       auto signal_rotation = signal->GetTransform().rotation;
       auto closest_waypoint_to_signal =

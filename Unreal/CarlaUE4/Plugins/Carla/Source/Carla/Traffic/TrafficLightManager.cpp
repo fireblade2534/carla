@@ -11,7 +11,7 @@
 #include "SpeedLimitComponent.h"
 #include "Components/BoxComponent.h"
 #include "Runtime/CoreUObject/Public/UObject/ConstructorHelpers.h"
-
+#include "Misc/ConfigCacheIni.h"
 #include "UObject/ConstructorHelpers.h"
 
 #include <compiler/disable-ue4-macros.h>
@@ -20,7 +20,46 @@
 #include <carla/opendrive/OpenDriveParser.h>
 #include <compiler/enable-ue4-macros.h>
 
+
 #include <string>
+#include <cstdio>
+
+namespace
+{
+
+FTransform ReadOpenDriveHeadCorrection()
+{
+  FVector Location = FVector::ZeroVector;
+  FRotator Rotation(0.0f, 90.0f, 0.0f);
+  FVector Scale = FVector::OneVector;
+
+  if (GConfig)
+  {
+    const TCHAR* Section = TEXT("OpenDriveTrafficLightHead");
+
+    GConfig->GetVector(
+        Section,
+        TEXT("Location"),
+        Location,
+        GGameIni);
+
+    GConfig->GetRotator(
+        Section,
+        TEXT("Rotation"),
+        Rotation,
+        GGameIni);
+
+    GConfig->GetVector(
+        Section,
+        TEXT("Scale"),
+        Scale,
+        GGameIni);
+  }
+
+  return FTransform(Rotation, Location, Scale);
+}
+
+} // namespace
 
 ATrafficLightManager::ATrafficLightManager()
 {
@@ -45,6 +84,19 @@ ATrafficLightManager::ATrafficLightManager()
     TSubclassOf<AActor> Model = TrafficLightLHTFinder.Class;
     TrafficLightModel_LHT = Model;
   }
+
+  static ConstructorHelpers::FClassFinder<AActor> HeadFinder(
+    TEXT(
+        "/Game/Carla/Blueprints/TrafficLight/"
+        "BP_OpenDriveHeadOnly"));
+
+  if (HeadFinder.Succeeded())
+  {
+    // The same physical head works for both driving sides.
+    TrafficLightModel_RHT = HeadFinder.Class;
+    TrafficLightModel_LHT = HeadFinder.Class;
+  }
+
   // Default traffic signs models
   static ConstructorHelpers::FClassFinder<AActor> StopFinder(
       TEXT( "/Game/Carla/Static/TrafficSign/BP_Stop" ) );
@@ -556,27 +608,28 @@ void ATrafficLightManager::SpawnTrafficLights()
 
   ACarlaGameModeBase *GM = UCarlaStatics::GetGameMode(GetWorld());
   check(GM);
+
+  const FTransform HeadCorrection = ReadOpenDriveHeadCorrection();
+
   for(auto &SignalId : SignalsToSpawn)
   {
-    // TODO: should this be an assert?
-    // RELEASE_ASSERT(
-    //     Signals.count(SignalId) > 0,
-    //     "Reference to inexistent signal. Possible OpenDRIVE error.");
-    if (Signals.count(SignalId) == 0)
-    {
-      UE_LOG(LogCarla, Warning,
-          TEXT("Possible OpenDRIVE error, reference to nonexistent signal id: %s"),
-          *carla::rpc::ToFString(SignalId));
+    const auto SignalIt = Signals.find(SignalId);
+
+    if (SignalIt == Signals.end() || !SignalIt->second) {
       continue;
     }
-    const auto& Signal = Signals.at(SignalId);
-    auto CarlaTransform = Signal->GetTransform();
+
+    const auto& Signal = SignalIt->second;
+
+    const bool UseCarlaHead = Signal->GetName() == "Signal_3Light_Post01";
+
+    UClass* ActorClass = UseCarlaHead ? TrafficLightModel_RHT.Get() : ATrafficLightBase::StaticClass();
+
+    const auto& CarlaTransform = Signal->GetTransform();
     auto ClosestWaypointToSignal =
-        GetMap()->GetClosestWaypointOnRoad(CarlaTransform.location);
+      GetMap()->GetClosestWaypointOnRoad(CarlaTransform.location);
 
     FTransform SpawnTransform(CarlaTransform);
-
-    FVector SpawnLocation = SpawnTransform.GetLocation();
     FRotator SpawnRotation(SpawnTransform.GetRotation());
     // Blueprints are all rotated by 90 degrees
     SpawnRotation.Yaw += 90;
@@ -584,17 +637,26 @@ void ATrafficLightManager::SpawnTrafficLights()
     SpawnRotation.Roll = 0;
     SpawnRotation.Pitch = 0;
 
+    FTransform ActorTransform(
+      SpawnRotation,
+      SpawnTransform.GetLocation());
+
+    if (UseCarlaHead)
+    {
+      ActorTransform = HeadCorrection * FTransform(Signal->GetTransform());
+    }
+
     FActorSpawnParameters SpawnParams;
     SpawnParams.Owner = this;
     SpawnParams.SpawnCollisionHandlingOverride =
         ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     SpawnParams.OverrideLevel = GM->GetULevelFromName("TrafficLights");
 
-    ATrafficLightBase * TrafficLight = GetWorld()->SpawnActor<ATrafficLightBase>(
-        ATrafficLightBase::StaticClass(),
-        SpawnLocation,
-        SpawnRotation,
-        SpawnParams);
+    ATrafficLightBase* TrafficLight =
+      GetWorld()->SpawnActor<ATrafficLightBase>(
+          ActorClass,
+          ActorTransform,
+          SpawnParams);
 
     TrafficSigns.Add(TrafficLight);
 
@@ -604,6 +666,10 @@ void ATrafficLightManager::SpawnTrafficLights()
 
     RegisterLightComponentFromOpenDRIVE(TrafficLightComponent);
     TrafficLightComponent->InitializeSign(GetMap().get());
+
+    if (UseCarlaHead) {
+      TrafficLightComponent->SetLightState(TrafficLightComponent->GetLightState());
+    }
   }
 }
 
