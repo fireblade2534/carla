@@ -20,6 +20,53 @@
 #include "Materials/MaterialInterface.h"
 #include "Engine/Classes/Interfaces/Interface_CollisionDataProvider.h"
 #include "PhysicsCore/Public/BodySetupEnums.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
+#include "Engine/StaticMeshActor.h"
+#include "Misc/ConfigCacheIni.h"
+
+namespace
+{
+  struct FOpenDriveMeshMapping
+  {
+    FString MeshPath;
+    FTransform LocalCorrection = FTransform::Identity;
+  };
+
+
+  bool ResolveObjectMapping(
+      const carla::road::Object& Object,
+      FOpenDriveMeshMapping& OutMapping)
+  {
+    const FString ObjectName =
+        UTF8_TO_TCHAR(Object.GetName().c_str());
+
+    const FString Section =
+        FString(TEXT("OpenDrive.Object.Name.")) + ObjectName;
+
+    FString MeshPath;
+
+    if (!GConfig || !GConfig->GetString(*Section, TEXT("Mesh"), MeshPath, GGameIni) || MeshPath.IsEmpty())
+    {
+      return false;
+    }
+
+    FVector Location = FVector::ZeroVector;
+    FRotator Rotation = FRotator::ZeroRotator;
+    FVector Scale = FVector::OneVector;
+
+    GConfig->GetVector(*Section, TEXT("Location"), Location, GGameIni);
+
+    GConfig->GetRotator(*Section, TEXT("Rotation"), Rotation, GGameIni);
+
+    GConfig->GetVector(*Section, TEXT("Scale"), Scale, GGameIni);
+
+    OutMapping.MeshPath = MoveTemp(MeshPath);
+    OutMapping.LocalCorrection = FTransform(Rotation, Location, Scale);
+
+    return true;
+  }
+}
 
 AProceduralMeshActor::AProceduralMeshActor()
 {
@@ -130,6 +177,146 @@ void AOpenDriveGenerator::GenerateRoadMesh()
   // {
   //   UE_LOG(LogCarla, Error, TEXT("The road collision mesh could not be generated!"));
   // }
+}
+
+void AOpenDriveGenerator::GenerateObjects()
+{
+  if (!IsOpenDriveValid())
+  {
+    UE_LOG(
+        LogCarla,
+        Error,
+        TEXT("Cannot generate objects: OpenDRIVE map is missing"));
+
+    return;
+  }
+
+  // Replace props from a previous call.
+  for (AActor* Actor : ObjectActors)
+  {
+    if (IsValid(Actor))
+    {
+      Actor->Destroy();
+    }
+  }
+
+  ObjectActors.Empty();
+
+  carla::rpc::OpendriveGenerationParameters Parameters;
+
+  if (UCarlaGameInstance* GameInstance =
+          UCarlaStatics::GetGameInstance(GetWorld()))
+  {
+    Parameters = GameInstance->GetOpendriveGenerationParameters();
+  }
+
+  const auto& CarlaMap = UCarlaStatics::GetGameMode(GetWorld())->GetMap();
+
+  for (const auto& ObjectPair : CarlaMap->GetObjects())
+  {
+    const carla::road::Object& Object = *ObjectPair.second;
+
+    const FString ObjectName = UTF8_TO_TCHAR(Object.GetName().c_str());
+
+    if (Object.GetType() == "crosswalk" ||
+        ObjectName.Contains(
+            TEXT("crosswalk"),
+            ESearchCase::IgnoreCase))
+    {
+      continue;
+    }
+
+    FOpenDriveMeshMapping Mapping;
+
+    if (!ResolveObjectMapping(Object, Mapping))
+    {
+      UE_LOG(
+          LogCarla,
+          Warning,
+          TEXT("No asset mapping for XODR object %u: %s"),
+          Object.GetObjectId(),
+          *ObjectName);
+
+      continue;
+    }
+
+    UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Mapping.MeshPath);
+
+    if (!Mesh)
+    {
+      UE_LOG(
+          LogCarla,
+          Error,
+          TEXT(
+              "Could not load mesh for XODR object %u: %s"),
+          Object.GetObjectId(),
+          *Mapping.MeshPath);
+
+      continue;
+    }
+
+    
+
+    const FTransform ObjectTransform(CarlaMap->ComputeObjectTransform(Object));
+
+    const FTransform MeshTransform = Mapping.LocalCorrection * ObjectTransform;
+
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Owner = this;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+    AStaticMeshActor* Actor =
+        GetWorld()->SpawnActor<AStaticMeshActor>(
+            MeshTransform.GetLocation(),
+            MeshTransform.Rotator(),
+            SpawnParams);
+
+    if (!Actor)
+    {
+      UE_LOG(
+          LogCarla,
+          Error,
+          TEXT("Failed to spawn XODR object %u"),
+          Object.GetObjectId());
+
+      continue;
+    }
+
+    UStaticMeshComponent* MeshComponent = Actor->GetStaticMeshComponent();
+
+    MeshComponent->SetMobility(EComponentMobility::Movable);
+
+    MeshComponent->SetStaticMesh(Mesh);
+
+    Actor->SetActorTransform(MeshTransform);
+
+    MeshComponent->SetCollisionProfileName(TEXT("BlockAll"));
+
+    MeshComponent->SetMobility(EComponentMobility::Static);
+
+    Actor->SetActorHiddenInGame(!Parameters.enable_mesh_visibility);
+
+    Actor->Tags.Add(
+        FName(*FString::Printf(
+            TEXT("OpenDriveObject_%u"),
+            Object.GetObjectId())));
+
+    ObjectActors.Add(Actor);
+    const FVector Position = Actor->GetActorLocation();
+
+    UE_LOG(
+        LogCarla,
+        Log,
+        TEXT("Spawned XODR object %u: %s"),
+        Object.GetObjectId(),
+        *ObjectName);
+  }
+
+  UE_LOG(
+      LogCarla,
+      Log,
+      TEXT("Generated %d OpenDRIVE prop actors"),
+      ObjectActors.Num());
 }
 
 void AOpenDriveGenerator::GeneratePoles()
@@ -290,6 +477,8 @@ void AOpenDriveGenerator::GenerateAll()
   GenerateLaneMarkings();
   GenerateSpawnPoints();
   GeneratePoles();
+
+  GenerateObjects();
 }
 
 void AOpenDriveGenerator::BeginPlay()

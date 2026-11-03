@@ -250,7 +250,7 @@ namespace geom {
     double s_current = s_start;
 
     std::vector<geom::Vector3D> vertices;
-    if (false) {
+    if (lane.IsStraight()) {
       // Mesh optimization: If the lane is straight just add vertices at the
       // begining and at the end of it
       const auto edges = lane.GetCornerPositions(s_current, road_param.extra_lane_width);

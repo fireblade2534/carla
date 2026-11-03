@@ -80,7 +80,7 @@ namespace parser {
             type_width = road_mark_type.attribute("width").as_double();
           }
 
-          std::cout << "Road Mark Offset: " << s_offset << ", Type: " << type << ", Lane Change: " << lane_change << std::endl;
+          // std::cout << "Road Mark Offset: " << s_offset << ", Type: " << type << ", Lane Change: " << lane_change << std::endl;
 
           bool is_rht = lane->GetRoad()->IsRHT();
           // Call map builder for LaneRoadMark
@@ -109,7 +109,7 @@ namespace parser {
           const std::string rule = road_mark_type_line_node.attribute("rule").value();
           const double width = road_mark_type_line_node.attribute("width").as_double();
           
-          std::cout << "Road Mark Type Line Lane: " << lane << ", Road Mark ID: " << road_mark_id << ", Offset: " << s_offset + s << ", Space: " << space << ", TOffset: " << t << ", Width: " << width << std::endl;
+          //std::cout << "Road Mark Type Line Lane: " << lane << ", Road Mark ID: " << road_mark_id << ", Offset: " << s_offset + s << ", Space: " << space << ", TOffset: " << t << ", Width: " << width << std::endl;
 
           // Call map builder for LaneRoadMarkType LaneRoadMarkTypeLine
           map_builder.CreateRoadMarkTypeLine(

@@ -240,11 +240,23 @@ def generate_import_setting_file(package_name, json_dirname, props, maps, do_til
         }
 
         for prop in props:
-            props_dest = "/" + "/".join(["Game", package_name, "Static", prop["tag"], prop["name"]])
+            prop_import_settings = copy.deepcopy(import_settings)
+
+            prop_import_settings["bOverrideFullName"] = True
+            prop_import_settings["StaticMeshImportData"]["bCombineMeshes"] = True
+
+            props_dest = "/" + "/".join([
+                "Game",
+                package_name,
+                "Static",
+                prop["tag"],
+                prop["name"]
+            ])
 
             file_names = [os.path.join(json_dirname, prop["source"])]
+
             import_groups.append({
-                "ImportSettings": import_settings,
+                "ImportSettings": prop_import_settings,
                 "FactoryName": "FbxFactory",
                 "DestinationPath": props_dest,
                 "bReplaceExisting": "true",
@@ -279,11 +291,11 @@ def generate_package_file(package_name, props, maps):
     for prop in props:
         name = prop["name"]
         size = prop["size"]
-        source_name = os.path.basename(prop["source"]).split('.')
-        if len(source_name) < 2:
-            print("[Warning] File name '" + prop["source"] + "' contains multiple dots ('.')")
+        asset_name = os.path.splitext(
+            os.path.basename(prop["source"])
+        )[0]
 
-        source_name = '.'.join([source_name[0], source_name[0]])
+        source_name = f"{asset_name}.{asset_name}"
 
         path = "/" + "/".join(["Game", package_name, "Static", prop["tag"], prop["name"], source_name])
 

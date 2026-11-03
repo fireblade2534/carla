@@ -17,6 +17,9 @@ bash  -o pipefail ./Util/BuildTools/BuildLibCarla.sh --server --release --ros2
 bash ./Util/BuildTools/BuildOSM2ODR.sh --build
 bash ./Util/BuildTools/BuildUE4Plugins.sh --build
 bash ./Util/BuildTools/BuildCarlaUE4.sh --build --ros2 --no-simready
+bash ./Util/BuildTools/Import.sh
 bash ./Util/BuildTools/Package.sh \
   --packages=Carla,RoadRunnerAssets \
   --no-zip
+
+bash ./Util/BuildTools/MergeAssets.sh

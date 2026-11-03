@@ -687,36 +687,87 @@ void UPrepareAssetsForCookingCommandlet::PrepareMapsForCooking(
 }
 
 void UPrepareAssetsForCookingCommandlet::PreparePropsForCooking(
-    FString &PackageName,
-    const TArray<FString> &PropsPaths,
-    FString &MapDestPath)
+    FString& PackageName,
+    const TArray<FString>& PropsPaths,
+    FString& MapDestPath)
 {
-  // Load World
+  // Load the existing BaseMap.
   FAssetData AssetData;
-  // Loads the BaseMap
   LoadWorld(AssetData);
-  UObjectRedirector *BaseMapRedirector = Cast<UObjectRedirector>(AssetData.GetAsset());
-  if (BaseMapRedirector != nullptr) {
-    World = CastChecked<UWorld>(BaseMapRedirector->DestinationObject);
+
+  UObjectRedirector* BaseMapRedirector =
+      Cast<UObjectRedirector>(AssetData.GetAsset());
+
+  if (BaseMapRedirector != nullptr)
+  {
+    World = CastChecked<UWorld>(
+        BaseMapRedirector->DestinationObject);
   }
-  else {
+  else
+  {
     World = CastChecked<UWorld>(AssetData.GetAsset());
   }
 
-  // Remove the meshes names from the original path for props, so we can load
-  // props inside folder
-  TArray<FString> PropPathDirs = PropsPaths;
+  TArray<AStaticMeshActor*> SpawnedActors;
 
-  for (auto &PropPath : PropPathDirs)
+  for (const FString& PropPath : PropsPaths)
   {
-    PropPath.Split(TEXT("/"), &PropPath, nullptr,
-        ESearchCase::Type::IgnoreCase, ESearchDir::Type::FromEnd);
+    UStaticMesh* Mesh =
+        LoadObject<UStaticMesh>(nullptr, *PropPath);
+
+    if (!Mesh)
+    {
+      UE_LOG(
+          LogTemp,
+          Fatal,
+          TEXT("Cannot prepare prop for cooking: %s"),
+          *PropPath);
+    }
+
+    AStaticMeshActor* MeshActor =
+        World->SpawnActor<AStaticMeshActor>(
+            AStaticMeshActor::StaticClass(),
+            FTransform::Identity);
+
+    if (!MeshActor)
+    {
+      UE_LOG(
+          LogTemp,
+          Fatal,
+          TEXT("Cannot create cooking reference for prop: %s"),
+          *PropPath);
+    }
+
+    MeshActor->GetStaticMeshComponent()->SetStaticMesh(Mesh);
+    MeshActor->SetActorLabel(Mesh->GetName(), true);
+
+    // Preserve the collision preparation performed by the
+    // original helper.
+    UBodySetup* BodySetup = Mesh->BodySetup;
+
+    if (BodySetup)
+    {
+      BodySetup->CollisionTraceFlag = CTF_UseComplexAsSimple;
+      Mesh->MarkPackageDirty();
+    }
+
+    SpawnedActors.Add(MeshActor);
+
+    UE_LOG(
+        LogTemp,
+        Display,
+        TEXT("Added prop to cooking map: %s"),
+        *PropPath);
   }
 
-  // Add props in a single Base Map
-  TArray<AStaticMeshActor *> SpawnedActors = SpawnMeshesToWorld(PropPathDirs, false);
+  UE_LOG(
+      LogTemp,
+      Display,
+      TEXT("Prepared %d prop meshes for cooking"),
+      SpawnedActors.Num());
 
-  const FString MapName("PropsMap");
+  // Saving this map creates references for the cooker.
+  const FString MapName(TEXT("PropsMap"));
   SaveWorld(AssetData, PackageName, MapDestPath, MapName);
 
   DestroySpawnedActorsInWorld(SpawnedActors);

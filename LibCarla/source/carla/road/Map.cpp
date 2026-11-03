@@ -1218,9 +1218,6 @@ namespace road {
     using Chain = std::vector<V>;
 
     auto Unsupported = [&](const char *reason) {
-      std::cerr << "[junction pavement] junction " << junction.GetId()
-                << ": " << reason << "; keeping existing lane meshes"
-                << std::endl;
       return geom::Mesh{};
     };
 
@@ -1600,11 +1597,6 @@ namespace road {
         mesh_factory.road_param.resolution);
 
       if (!pavement.GetVertices().empty()) {
-        std::cerr << "[junction pavement] junction " << junction.GetId()
-                  << " vertices=" << pavement.GetVertices().size()
-                  << " triangles=" << pavement.GetIndexes().size() / 3
-                  << std::endl;
-
         out_mesh_list.push_back(
             std::make_unique<geom::Mesh>(std::move(pavement)));
       }

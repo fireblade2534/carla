@@ -54,6 +54,9 @@ public:
   /// Generates the road and sidewalk mesh based on the OpenDRIVE information.
   void GenerateRoadMesh();
 
+  /// Generates mapped static props from OpenDRIVE objects.
+  void GenerateObjects();
+
   /// Generates pole meshes based on the OpenDRIVE information.
   void GeneratePoles();
 
@@ -81,7 +84,10 @@ protected:
   FString OpenDriveData;
 
   UPROPERTY(EditAnywhere)
-  TArray<AActor *> ActorMeshList;
+  TArray<AActor*> ActorMeshList;
+
+  UPROPERTY()
+  TArray<AActor*> ObjectActors;
 
   UPROPERTY(Category = "OpenDRIVE Markings", EditAnywhere)
   TSoftObjectPtr<UMaterialInterface> LaneMarkingWhiteMaterial =
