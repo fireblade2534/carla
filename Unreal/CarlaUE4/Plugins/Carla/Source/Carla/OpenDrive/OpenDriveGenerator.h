@@ -62,6 +62,9 @@ public:
 
   /// Generates spawn points along the road.
   void GenerateSpawnPoints();
+  
+  /// Generates the crosswalk mesh
+  void GenerateCrosswalkMesh();
 
   /// Generate lane markings
   void GenerateLaneMarkings();

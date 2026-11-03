@@ -89,12 +89,26 @@ namespace geom {
         std::pair<geom::Vector3D, geom::Vector3D> edges_1 = 
               factory.ComputeEdgesForLanemark(lane_section, lane, s_current, line.GetWidth(), line.GetTOffset());
 
+        const double texture_repeat_m = 1.0;
+        const double uv_origin_s = lane_section.GetDistance();
+
+        const auto add_edge_pair = [&mesh, texture_repeat_m, uv_origin_s](
+              const std::pair<geom::Vector3D, geom::Vector3D>& edges,
+              double sample_s) {
+            const float v = static_cast<float>((sample_s - uv_origin_s) / texture_repeat_m);
+
+            mesh.AddVertex(edges.first);
+            mesh.AddUV(geom::Vector2D(0.0f, v));
+
+            mesh.AddVertex(edges.second);
+            mesh.AddUV(geom::Vector2D(1.0f, v));
+          };
+
         switch (type) {
           case carla::road::element::LaneMarking::Type::Solid: {
             size_t currentIndex = mesh.GetVertices().size() + 1;
 
-            mesh.AddVertex(edges_1.first);
-            mesh.AddVertex(edges_1.second);
+            add_edge_pair(edges_1, s_current);
 
             if (previous_type == carla::road::element::LaneMarking::Type::Solid) {
               mesh.AddIndex(currentIndex - 2);
@@ -120,8 +134,7 @@ namespace geom {
               factory.ComputeEdgesForLanemark(lane_section, lane, endpoint_s, line.GetWidth(), line.GetTOffset());
               
               currentIndex = mesh.GetVertices().size() + 1;
-              mesh.AddVertex(edges_2.first);
-              mesh.AddVertex(edges_2.second);
+              add_edge_pair(edges_2, endpoint_s);
 
               mesh.AddIndex(currentIndex - 2);
               mesh.AddIndex(currentIndex - 1);
@@ -150,15 +163,15 @@ namespace geom {
               double remaining = length - phase;
 
               size_t currentIndex = mesh.GetVertices().size() + 1;
+              
+              const double dash_end_s = std::min(s_current + remaining, record_end);
 
               std::pair<geom::Vector3D, geom::Vector3D> edges_2 = 
-                factory.ComputeEdgesForLanemark(lane_section, lane, std::min(s_current + remaining, record_end), line.GetWidth(), line.GetTOffset());
+                factory.ComputeEdgesForLanemark(lane_section, lane, dash_end_s, line.GetWidth(), line.GetTOffset());
 
-              mesh.AddVertex(edges_1.first);
-              mesh.AddVertex(edges_1.second);
+              add_edge_pair(edges_1, s_current);
 
-              mesh.AddVertex(edges_2.first);
-              mesh.AddVertex(edges_2.second);
+              add_edge_pair(edges_2, dash_end_s);
 
               mesh.AddIndex(currentIndex);
               mesh.AddIndex(currentIndex + 1);
