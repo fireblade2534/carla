@@ -24,6 +24,24 @@ namespace road {
 
     boost::optional<Map> Build();
 
+    // called from object parser
+    void AddObject(        
+        ObjId id,
+        RoadId road_id,
+        std::string type,
+        std::string subtype,
+        std::string name,
+        double s,
+        double t,
+        double zOffset,
+        std::string orientation,
+        double height,
+        double length,
+        double width,
+        double hdg,
+        double pitch,
+        double roll);
+
     // called from road parser
     carla::road::Road *AddRoad(
         const RoadId road_id,

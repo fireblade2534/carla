@@ -16,6 +16,7 @@
 #include "carla/road/Road.h"
 #include "carla/road/RoadTypes.h"
 #include "carla/road/Signal.h"
+#include "carla/road/Object.h"
 #include "carla/road/Stencil.h"
 
 #include <boost/iterator/transform_iterator.hpp>
@@ -76,6 +77,10 @@ namespace road {
       return _roads.size();
     }
 
+    const std::unordered_map<ObjId, std::unique_ptr<Object>> &GetObjects() const {
+      return _objects;
+    }
+
     const std::unordered_map<SignId, std::unique_ptr<Signal>> &GetSignals() const {
       return _signals;
     }
@@ -99,6 +104,8 @@ namespace road {
     std::unordered_map<RoadId, Road> _roads;
 
     std::unordered_map<JuncId, Junction> _junctions;
+
+    std::unordered_map<ObjId, std::unique_ptr<Object>> _objects;
 
     std::unordered_map<SignId, std::unique_ptr<Signal>> _signals;
 

@@ -66,6 +66,8 @@ namespace road {
 
     geom::Transform ComputeTransform(Waypoint waypoint) const;
 
+    geom::Transform ComputeObjectTransform(const Object& object) const;
+
     /// ========================================================================
     /// -- Road information ----------------------------------------------------
     /// ========================================================================
@@ -191,6 +193,10 @@ namespace road {
 
     const std::unordered_map<SignId, std::unique_ptr<Signal>>& GetSignals() const {
       return _data.GetSignals();
+    }
+
+    const std::unordered_map<ObjId, std::unique_ptr<Object>>& GetObjects() const {
+      return _data.GetObjects();
     }
 
     const std::unordered_map<ContId, std::unique_ptr<Controller>>& GetControllers() const {

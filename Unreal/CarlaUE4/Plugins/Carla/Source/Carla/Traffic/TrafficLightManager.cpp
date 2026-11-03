@@ -277,12 +277,6 @@ void ATrafficLightManager::GenerateSignalsAndTrafficLights()
 {
   if(!TrafficLightsGenerated)
   {
-    if(!TrafficLightModel_RHT || !TrafficLightModel_LHT )
-    {
-      UE_LOG(LogCarla, Error, TEXT("Missing TrafficLightModel"));
-      return;
-    }
-
     RemoveRoadrunnerProps();
 
     SpawnTrafficLights();
@@ -580,8 +574,6 @@ void ATrafficLightManager::SpawnTrafficLights()
     auto ClosestWaypointToSignal =
         GetMap()->GetClosestWaypointOnRoad(CarlaTransform.location);
 
-    const bool IsRHT = GetMap()->GetLane(ClosestWaypointToSignal.get()).GetRoad()->IsRHT();
-
     FTransform SpawnTransform(CarlaTransform);
 
     FVector SpawnLocation = SpawnTransform.GetLocation();
@@ -598,9 +590,8 @@ void ATrafficLightManager::SpawnTrafficLights()
         ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     SpawnParams.OverrideLevel = GM->GetULevelFromName("TrafficLights");
 
-    auto TrafficLightModel = IsRHT ? TrafficLightModel_RHT : TrafficLightModel_LHT;
     ATrafficLightBase * TrafficLight = GetWorld()->SpawnActor<ATrafficLightBase>(
-        TrafficLightModel,
+        ATrafficLightBase::StaticClass(),
         SpawnLocation,
         SpawnRotation,
         SpawnParams);
@@ -610,26 +601,7 @@ void ATrafficLightManager::SpawnTrafficLights()
     UTrafficLightComponent *TrafficLightComponent = TrafficLight->GetTrafficLightComponent();
     TrafficLightComponent->SetSignId(SignalId.c_str());
     IgnoredActorsForHeightAdjustment.Add(TrafficLight);
-    if (ClosestWaypointToSignal)
-    {
-      auto SignalDistanceToRoad =
-          (GetMap()->ComputeTransform(ClosestWaypointToSignal.get()).location - CarlaTransform.location).Length();
-      double LaneWidth = GetMap()->GetLaneWidth(ClosestWaypointToSignal.get());
 
-      if(SignalDistanceToRoad < LaneWidth * 0.5)
-      {
-        carla::log_warning("Traffic light",
-            TCHAR_TO_UTF8(*TrafficLightComponent->GetSignId()),
-            "overlaps a driving lane. Disabling collision...");
-
-        TArray<UPrimitiveComponent*> Primitives;
-        TrafficLight->GetComponents(Primitives);
-        for (auto* Primitive : Primitives)
-        {
-          Primitive->SetCollisionProfileName(TEXT("NoCollision"));
-        }
-      }
-    }
     RegisterLightComponentFromOpenDRIVE(TrafficLightComponent);
     TrafficLightComponent->InitializeSign(GetMap().get());
   }

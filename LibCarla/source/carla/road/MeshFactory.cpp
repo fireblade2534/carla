@@ -53,6 +53,11 @@ namespace geom {
       const std::string& marking_color) {
 
       const double s_end = lane_section.GetDistance() + lane_section.GetLength();
+
+      if (s_current >= s_end) {
+        previous_type = carla::road::element::LaneMarking::Type::None;
+        return;
+      }
       
       if (type != carla::road::element::LaneMarking::Type::None && line_ptr != nullptr) {
         const auto& line = *line_ptr;
@@ -105,10 +110,14 @@ namespace geom {
             double s_next = s_current + factory.road_param.resolution;
 
             if (s_next > record_end) {
-              s_next = record_end + 0.01;
+              s_next = record_end;
+
+              const double endpoint_s = std::min(
+                record_end,
+                std::nextafter(s_end, lane_section.GetDistance()));
 
               std::pair<geom::Vector3D, geom::Vector3D> edges_2 = 
-              factory.ComputeEdgesForLanemark(lane_section, lane, s_next, line.GetWidth(), line.GetTOffset());
+              factory.ComputeEdgesForLanemark(lane_section, lane, endpoint_s, line.GetWidth(), line.GetTOffset());
               
               currentIndex = mesh.GetVertices().size() + 1;
               mesh.AddVertex(edges_2.first);

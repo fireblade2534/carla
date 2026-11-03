@@ -42,6 +42,27 @@ namespace parser {
           std::string name_lower = name;
           std::transform(name_lower.begin(), name_lower.end(), name_lower.begin(),
                 [](unsigned char c){ return std::tolower(c); });
+
+
+          // Add all objects to a generic object list
+          map_builder.AddObject(
+            node_object.attribute("id").as_uint(),
+            node_road.attribute("id").as_uint(),
+            type,
+            node_object.attribute("subtype").as_string(),
+            name,
+            node_object.attribute("s").as_double(),
+            node_object.attribute("t").as_double(),
+            node_object.attribute("zOffset").as_double(),
+            node_object.attribute("orientation").as_string(),
+            node_object.attribute("height").as_double(),
+            node_object.attribute("length").as_double(),
+            node_object.attribute("width").as_double(),
+            node_object.attribute("hdg").as_double(),
+            node_object.attribute("pitch").as_double(),
+            node_object.attribute("roll").as_double()
+          );
+
           bool bIsCrosswalk = (type == "crosswalk" || (name_lower.find("crosswalk") != std::string::npos));
           if (bIsCrosswalk) {
               // read all points

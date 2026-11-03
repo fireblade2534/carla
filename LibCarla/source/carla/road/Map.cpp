@@ -282,6 +282,28 @@ namespace road {
     return GetLane(waypoint).ComputeTransform(waypoint.s);
   }
 
+  geom::Transform Map::ComputeObjectTransform(const Object& object) const {
+    auto point = _data.GetRoad(object.GetRoadId())
+        .GetDirectedPointInNoLaneOffset(object.GetS());
+
+    point.ApplyLateralOffset(static_cast<float>(-object.GetT()));
+
+    point.location.y *= -1.0f;
+
+    point.location.z += static_cast<float>(object.GetZOffset());
+
+    return geom::Transform(
+        point.location,
+        geom::Rotation(
+            geom::Math::ToDegrees(
+                static_cast<float>(object.GetPitch())),
+            geom::Math::ToDegrees(
+                static_cast<float>(
+                    -(point.tangent + object.GetHdg()))),
+            geom::Math::ToDegrees(
+                static_cast<float>(object.GetRoll()))));
+  }
+
   // ===========================================================================
   // -- Map: Road information --------------------------------------------------
   // ===========================================================================

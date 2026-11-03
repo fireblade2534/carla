@@ -72,6 +72,45 @@ namespace road {
     return map;
   }
 
+  void MapBuilder::AddObject(        
+    ObjId id,
+    RoadId road_id,
+    std::string type,
+    std::string subtype,
+    std::string name,
+    double s,
+    double t,
+    double zOffset,
+    std::string orientation,
+    double height,
+    double length,
+    double width,
+    double hdg,
+    double pitch,
+    double roll) {
+    
+    _map_data._objects.emplace(
+      std::make_pair(id,
+        std::make_unique<Object>(
+        id,
+        road_id,
+        type,
+        subtype,
+        name,
+        s,
+        t,
+        zOffset,
+        orientation,
+        height,
+        length,
+        width,
+        hdg,
+        pitch,
+        roll)
+      )
+    );
+  }
+
   // called from profiles parser
   void MapBuilder::AddRoadElevationProfile(
       Road *road,
