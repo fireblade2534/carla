@@ -551,6 +551,44 @@ namespace geom {
 
       }
     }
+    // Close exposed median ends.
+    if (lane.GetType() == road::Lane::LaneType::Median &&
+        vertices.size() >= 6) {
+
+      auto AddEndCap = [&](size_t row, bool at_start) {
+        const size_t first = out_mesh.GetVerticesNum() + 1;
+
+        // Copy the four corners of the existing end cross-section.
+        // Separate vertices keep the cap's shading separate from the walls.
+        out_mesh.AddVertices({
+            vertices[row],
+            vertices[row + 1],
+            vertices[row + 4],
+            vertices[row + 5]});
+
+        out_mesh.AddUVs({{0, 0}, {0, 1}, {1, 1}, {1, 0}});
+
+        // Two triangles. Reverse their direction for the starting end.
+        out_mesh.AddIndex(first);
+        out_mesh.AddIndex(first + (at_start ? 2 : 1));
+        out_mesh.AddIndex(first + (at_start ? 1 : 2));
+
+        out_mesh.AddIndex(first);
+        out_mesh.AddIndex(first + (at_start ? 3 : 2));
+        out_mesh.AddIndex(first + (at_start ? 2 : 3));
+      };
+
+      const double lane_start = lane.GetDistance();
+      const double lane_end = lane_start + lane.GetLength();
+
+      if (std::abs(s_start - lane_start) < 1e-4 && lane.GetPredecessor() == 0) {
+        AddEndCap(0, true);
+      }
+
+      if (std::abs(s_end - lane_end) < 1e-4 && lane.GetSuccessor() == 0) {
+        AddEndCap(vertices.size() - 6, false);
+      }
+    }
     out_mesh.EndMaterial();
     return std::make_unique<Mesh>(out_mesh);
   }

@@ -1481,7 +1481,7 @@ namespace road {
   result.AddMaterial("road");
 
   for (auto p : polygon) {
-    p.z -= 0.005f; // place the new surface beneath existing lane meshes
+    p.z -= 0.00001f; // place the new surface beneath existing lane meshes
     result.AddVertex(p);
   }
 
@@ -1796,8 +1796,7 @@ namespace road {
     
     std::vector<std::unique_ptr<geom::Mesh>> LineMarks;
     geom::MeshFactory mesh_factory(params);
-
-    const std::vector<RoadId> RoadsIDToGenerate = FilterRoadsByPosition(minpos, maxpos);
+    
     for (const auto& pair : _data.GetRoads()) {
       //std::cout << "Generating road markings for: " << id << std::endl;
 
