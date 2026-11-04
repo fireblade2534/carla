@@ -1,0 +1,3 @@
+[submodule "Unreal/CarlaUE4/Plugins/glTFRuntime"]
+	path = Unreal/CarlaUE4/Plugins/glTFRuntime
+	url = https://github.com/rdeioris/glTFRuntime.git

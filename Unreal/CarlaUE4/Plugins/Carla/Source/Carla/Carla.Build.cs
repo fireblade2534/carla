@@ -82,6 +82,7 @@ public class Carla : ModuleRules
         "RHI",
         "Renderer",
         "ProceduralMeshComponent",
+        "glTFRuntime",
         "MeshDescription",
         "Projects"
         // ... add other public dependencies that you statically link with here ...

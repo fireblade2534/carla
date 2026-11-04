@@ -237,6 +237,34 @@ bool UCarlaEpisode::LoadNewOpendriveEpisode(
   return true;
 }
 
+bool UCarlaEpisode::LoadNewGLTFMap(const std::vector<uint8_t> &gltf)
+{
+  if (gltf.empty())
+  {
+    UE_LOG(LogCarla, Error, TEXT("The gltf file is empty."));
+    return false;
+  }
+
+  TArray<uint8> GLTFData;
+  GLTFData.Append(gltf.data(), static_cast<int32>(gltf.size()));
+
+  const FString AbsoluteGLTFPath = FPaths::ConvertRelativePathToFull(
+      FPaths::ProjectContentDir() + "Carla/Maps/OpenDrive/GltfMap.gltf");
+
+  FFileHelper::SaveArrayToFile(
+      GLTFData,
+      *AbsoluteGLTFPath,
+      &IFileManager::Get());
+
+  if (!FPaths::FileExists(AbsoluteGLTFPath))
+  {
+    UE_LOG(LogCarla, Error, TEXT("ERROR: GLTF not copied!"));
+    return false;
+  }
+
+  return true;
+}
+
 void UCarlaEpisode::ApplySettings(const FEpisodeSettings &Settings)
 {
   EpisodeSettings = Settings;

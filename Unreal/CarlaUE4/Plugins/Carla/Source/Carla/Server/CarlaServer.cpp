@@ -365,6 +365,16 @@ void FCarlaServer::FPimpl::BindActions()
     return R<void>::Success();
   };
 
+  BIND_SYNC(copy_gltf) << [this](const std::vector<uint8_t> &gltf) -> R<void>
+  {
+    REQUIRE_CARLA_EPISODE();
+    if (!Episode->LoadNewGLTFMap(gltf))
+    {
+      RESPOND_ERROR("gltf could not be correctly parsed");
+    }
+    return R<void>::Success();
+  };
+
   BIND_SYNC(apply_color_texture_to_objects) << [this](
       const std::vector<std::string> &actors_name,
       const cr::MaterialParameter& parameter,

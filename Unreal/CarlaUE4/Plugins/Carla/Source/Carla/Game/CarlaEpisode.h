@@ -66,6 +66,12 @@ public:
       const FString &OpenDriveString,
       const carla::rpc::OpendriveGenerationParameters &Params);
 
+  /// Load a new gltf map and start a new episode.
+  ///
+  /// If @a MapString is empty, it fails.
+  bool LoadNewGLTFMap(
+      const std::vector<uint8_t> &gltf);
+
   // ===========================================================================
   // -- Episode settings -------------------------------------------------------
   // ===========================================================================
