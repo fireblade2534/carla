@@ -108,6 +108,9 @@ namespace detail {
     void CopyOpenDriveToServer(
         std::string opendrive, const rpc::OpendriveGenerationParameters & params);
 
+    void CopyGltfToServer(
+        std::vector<uint8_t>& data);
+
     void ApplyColorTextureToObjects(
         const std::vector<std::string> &objects_name,
         const rpc::MaterialParameter& parameter,

@@ -104,6 +104,11 @@ namespace client {
           std::move(opendrive), params, reset_settings)};
     }
 
+    void UploadGltf(const std::vector<uint8_t>& data) const
+    {
+        _simulator->CopyGltfToServer(data);
+    }
+
     /// Return an instance of the world currently active in the simulator.
     World GetWorld() const {
       return World{_simulator->GetCurrentEpisode()};

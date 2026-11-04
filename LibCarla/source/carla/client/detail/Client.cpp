@@ -164,6 +164,10 @@ namespace detail {
     _pimpl->CallAndWait<void>("copy_opendrive_to_file", std::move(opendrive), params);
   }
 
+  void Client::CopyGltfToServer(std::vector<uint8_t>& data){
+      _pimpl->CallAndWait<void>("copy_gltf", data);
+  }
+
   void Client::ApplyColorTextureToObjects(
       const std::vector<std::string> &objects_name,
       const rpc::MaterialParameter& parameter,

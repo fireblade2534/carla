@@ -176,13 +176,49 @@ static auto ApplyBatchCommandsSync(
   return result;
 }
 
+static void UploadGltfBytes(
+    carla::client::Client& client,
+    boost::python::object data)
+{
+    PyObject* obj = data.ptr();
+
+    if (!PyBytes_Check(obj))
+    {
+        PyErr_SetString(
+            PyExc_TypeError,
+            "copy_gltf expects a bytes object"
+        );
+
+        boost::python::throw_error_already_set();
+    }
+
+    char* buffer = nullptr;
+    Py_ssize_t size = 0;
+
+    if (PyBytes_AsStringAndSize(
+            obj, &buffer, &size) != 0)
+    {
+        boost::python::throw_error_already_set();
+    }
+
+    std::vector<uint8_t> bytes(
+        reinterpret_cast<uint8_t*>(buffer),
+        reinterpret_cast<uint8_t*>(buffer) + size
+    );
+
+    {
+        carla::PythonUtil::ReleaseGIL unlock;
+        client.UploadGltf(bytes);
+    }
+}
+
 void export_client() {
   using namespace boost::python;
   namespace cc = carla::client;
   namespace rpc = carla::rpc;
 
   class_<rpc::OpendriveGenerationParameters>("OpendriveGenerationParameters",
-      init<double, double, double, double, bool, bool, bool>((arg("vertex_distance")=2.0, arg("max_road_length")=50.0, arg("wall_height")=1.0, arg("additional_width")=0.6, arg("smooth_junctions")=true, arg("enable_mesh_visibility")=true, arg("enable_pedestrian_navigation")=true)))
+      init<double, double, double, double, bool, bool, bool, bool>((arg("vertex_distance")=2.0, arg("max_road_length")=50.0, arg("wall_height")=1.0, arg("additional_width")=0.6, arg("smooth_junctions")=true, arg("enable_mesh_visibility")=true, arg("enable_pedestrian_navigation")=true, arg("use_gltf_map")=false)))
     .def_readwrite("vertex_distance", &rpc::OpendriveGenerationParameters::vertex_distance)
     .def_readwrite("max_road_length", &rpc::OpendriveGenerationParameters::max_road_length)
     .def_readwrite("wall_height", &rpc::OpendriveGenerationParameters::wall_height)
@@ -190,6 +226,7 @@ void export_client() {
     .def_readwrite("smooth_junctions", &rpc::OpendriveGenerationParameters::smooth_junctions)
     .def_readwrite("enable_mesh_visibility", &rpc::OpendriveGenerationParameters::enable_mesh_visibility)
     .def_readwrite("enable_pedestrian_navigation", &rpc::OpendriveGenerationParameters::enable_pedestrian_navigation)
+    .def_readwrite("use_gltf_map", &rpc::OpendriveGenerationParameters::use_gltf_map)
   ;
 
 #define REPLAY_FILE_WITHOUT_GIL(fn) +[]( \
@@ -227,6 +264,7 @@ void export_client() {
     .def("generate_opendrive_world", CONST_CALL_WITHOUT_GIL_3(cc::Client, GenerateOpenDriveWorld, std::string,
         rpc::OpendriveGenerationParameters, bool), (arg("opendrive"), arg("parameters")=rpc::OpendriveGenerationParameters(),
         arg("reset_settings")=true))
+    .def("upload_gltf", &UploadGltfBytes, (arg("data")))
     .def("start_recorder", CALL_WITHOUT_GIL_2(cc::Client, StartRecorder, std::string, bool), (arg("name"), arg("additional_data")=false))
     .def("stop_recorder", &cc::Client::StopRecorder)
     .def("show_recorder_file_info", CALL_WITHOUT_GIL_2(cc::Client, ShowRecorderFileInfo, std::string, bool), (arg("name"), arg("show_all")))

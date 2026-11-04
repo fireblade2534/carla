@@ -155,7 +155,7 @@ void export_world() {
   ;
 
   class_<cr::EpisodeSettings>("WorldSettings")
-    .def(init<bool, bool, double, bool, double, int, float, bool, float, float, bool>(
+    .def(init<bool, bool, double, bool, double, int, float, bool, float, float, bool, bool>(
         (arg("synchronous_mode")=false,
          arg("no_rendering_mode")=false,
          arg("fixed_delta_seconds")=0.0,
@@ -166,7 +166,8 @@ void export_world() {
          arg("deterministic_ragdolls")=false,
          arg("tile_stream_distance")=3000.f,
          arg("actor_active_distance")=2000.f,
-         arg("spectator_as_ego")=true)))
+         arg("spectator_as_ego")=true,
+         arg("spawn_default_traffic_lights")=false)))
     .def_readwrite("synchronous_mode", &cr::EpisodeSettings::synchronous_mode)
     .def_readwrite("no_rendering_mode", &cr::EpisodeSettings::no_rendering_mode)
     .def_readwrite("substepping", &cr::EpisodeSettings::substepping)
@@ -185,6 +186,7 @@ void export_world() {
     .def_readwrite("tile_stream_distance", &cr::EpisodeSettings::tile_stream_distance)
     .def_readwrite("actor_active_distance", &cr::EpisodeSettings::actor_active_distance)
     .def_readwrite("spectator_as_ego", &cr::EpisodeSettings::spectator_as_ego)
+    .def_readwrite("spawn_default_traffic_lights", &cr::EpisodeSettings::spawn_default_traffic_lights)
     .def("__eq__", &cr::EpisodeSettings::operator==)
     .def("__ne__", &cr::EpisodeSettings::operator!=)
     .def(self_ns::str(self_ns::self))

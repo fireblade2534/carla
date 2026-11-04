@@ -169,8 +169,10 @@ bool UCarlaEpisode::LoadNewOpendriveEpisode(
   const auto CrosswalksMesh = CarlaMap->GetAllCrosswalkMesh();
   const auto RecastOBJ = (RoadMesh + CrosswalksMesh).GenerateOBJForRecast();
 
+  const bool IsGLTF = Params.use_gltf_map;
+
   const FString AbsoluteOBJPath = FPaths::ConvertRelativePathToFull(
-      FPaths::ProjectContentDir() + "Carla/Maps/Nav/OpenDriveMap.obj");
+      FPaths::ProjectContentDir() + (IsGLTF ? "Carla/Maps/Nav/GltfMap.obj" : "Carla/Maps/Nav/OpenDriveMap.obj"));
 
   // Store the OBJ string to a file in order to that RecastBuilder can load it
   FFileHelper::SaveStringToFile(
@@ -180,7 +182,7 @@ bool UCarlaEpisode::LoadNewOpendriveEpisode(
       &IFileManager::Get());
 
   const FString AbsoluteXODRPath = FPaths::ConvertRelativePathToFull(
-      FPaths::ProjectContentDir() + "Carla/Maps/OpenDrive/OpenDriveMap.xodr");
+      FPaths::ProjectContentDir() + (IsGLTF ? "Carla/Maps/OpenDrive/GltfMap.xodr" : "Carla/Maps/OpenDrive/OpenDriveMap.xodr"));
 
   // Copy the OpenDrive as a file in the serverside
   FFileHelper::SaveStringToFile(

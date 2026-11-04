@@ -11,7 +11,8 @@
 #include "SpeedLimitComponent.h"
 #include "Components/BoxComponent.h"
 #include "Runtime/CoreUObject/Public/UObject/ConstructorHelpers.h"
-
+#include "Carla/Game/CarlaGameModeBase.h"
+#include "Carla/Game/CarlaEpisode.h"
 #include "UObject/ConstructorHelpers.h"
 
 #include <compiler/disable-ue4-macros.h>
@@ -562,6 +563,9 @@ void ATrafficLightManager::SpawnTrafficLights()
 
   ACarlaGameModeBase *GM = UCarlaStatics::GetGameMode(GetWorld());
   check(GM);
+
+  const FEpisodeSettings& Settings = GM->GetCarlaEpisode().GetSettings();
+
   for(auto &SignalId : SignalsToSpawn)
   {
     // TODO: should this be an assert?
@@ -598,7 +602,15 @@ void ATrafficLightManager::SpawnTrafficLights()
         ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     SpawnParams.OverrideLevel = GM->GetULevelFromName("TrafficLights");
 
-    auto TrafficLightModel = IsRHT ? TrafficLightModel_RHT : TrafficLightModel_LHT;
+    TSubclassOf<AActor> TrafficLightModel;
+    if (Settings.SpawnDefaultTrafficLights)
+    {
+      TrafficLightModel = IsRHT ? TrafficLightModel_RHT : TrafficLightModel_LHT;
+    } else {
+      TrafficLightModel = ATrafficLightBase::StaticClass();
+    }
+    
+    
     ATrafficLightBase * TrafficLight = GetWorld()->SpawnActor<ATrafficLightBase>(
         TrafficLightModel,
         SpawnLocation,

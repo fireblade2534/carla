@@ -21,14 +21,16 @@ namespace rpc {
         double a_width,
         bool smooth_junc,
         bool e_visibility,
-        bool e_pedestrian)
+        bool e_pedestrian,
+        bool e_gltf_map = false)
       : vertex_distance(v_distance),
         max_road_length(max_road_len),
         wall_height(w_height),
         additional_width(a_width),
         smooth_junctions(smooth_junc),
         enable_mesh_visibility(e_visibility),
-        enable_pedestrian_navigation(e_pedestrian)
+        enable_pedestrian_navigation(e_pedestrian),
+        use_gltf_map(e_gltf_map)
         {}
 
     double vertex_distance = 2.0;
@@ -40,6 +42,7 @@ namespace rpc {
     bool smooth_junctions = true;
     bool enable_mesh_visibility = true;
     bool enable_pedestrian_navigation = true;
+    bool use_gltf_map = false;
 
     MSGPACK_DEFINE_ARRAY(
         vertex_distance,
@@ -48,7 +51,8 @@ namespace rpc {
         additional_width,
         smooth_junctions,
         enable_mesh_visibility,
-        enable_pedestrian_navigation);
+        enable_pedestrian_navigation,
+        use_gltf_map);
   };
 
 }

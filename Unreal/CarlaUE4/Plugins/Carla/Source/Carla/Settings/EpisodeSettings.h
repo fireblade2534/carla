@@ -39,4 +39,5 @@ struct CARLA_API FEpisodeSettings
 
   bool SpectatorAsEgo = true;
 
+  bool SpawnDefaultTrafficLights = false;
 };
