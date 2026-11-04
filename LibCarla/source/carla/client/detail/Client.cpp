@@ -164,7 +164,7 @@ namespace detail {
     _pimpl->CallAndWait<void>("copy_opendrive_to_file", std::move(opendrive), params);
   }
 
-  void Client::CopyGltfToServer(std::vector<uint8_t>& data){
+  void Client::CopyGltfToServer(const std::vector<uint8_t>& data){
       _pimpl->CallAndWait<void>("copy_gltf", data);
   }
 

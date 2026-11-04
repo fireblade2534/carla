@@ -88,7 +88,7 @@ namespace detail {
         const rpc::OpendriveGenerationParameters & params,
         bool reset_settings = true);
 
-    void CopyGltfToServer(std::vector<uint8_t>& data)
+    void CopyGltfToServer(const std::vector<uint8_t>& data)
     {
         _client.CopyGltfToServer(data);
     }
