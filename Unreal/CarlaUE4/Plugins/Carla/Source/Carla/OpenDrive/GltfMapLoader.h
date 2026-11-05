@@ -16,4 +16,9 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+
+    virtual void ReceiveOnStaticMeshComponentCreated_Implementation(
+        UStaticMeshComponent* Component,
+        const FglTFRuntimeNode& Node
+    ) override;
 };

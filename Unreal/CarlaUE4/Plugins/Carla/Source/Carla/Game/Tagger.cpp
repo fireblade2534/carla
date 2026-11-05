@@ -123,7 +123,12 @@ void ATagger::TagActor(const AActor &Actor, bool bTagForSemanticSegmentation, ui
   TArray<UStaticMeshComponent *> StaticMeshComponents;
   Actor.GetComponents<UStaticMeshComponent>(StaticMeshComponents);
   for (UStaticMeshComponent *Component : StaticMeshComponents) {
-    auto Label = GetLabelByPath(Component->GetStaticMesh());
+    const UStaticMesh* Mesh = Component->GetStaticMesh();
+
+    UTaggedComponent* ExistingTag = FindTaggedComponent(Component);
+
+    auto Label = ExistingTag ? GetTagOfTaggedComponent(*Component) : (Mesh ? GetLabelByPath(Mesh) : crp::CityObjectLabel::None);
+
     if (Label == crp::CityObjectLabel::Pedestrians &&
         Cast<ACarlaWheeledVehicle>(&Actor))
     {
