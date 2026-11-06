@@ -90,64 +90,6 @@ static Label ToCarlaLabel(const FString& Type)
   if (Type == TEXT("Static"))   return Label::Static;
   if (Type == TEXT("Dynamic"))  return Label::Dynamic;
   if (Type == TEXT("Other"))    return Label::Other;
-  // RoadRunner default categories
-  if (Type == TEXT("Road"))       return Label::Roads;
-  if (Type == TEXT("Marking"))    return Label::RoadLines;
-  if (Type == TEXT("Sidewalk"))   return Label::Sidewalks;
-  if (Type == TEXT("Curb"))       return Label::Sidewalks;
-  if (Type == TEXT("Gutter"))     return Label::Roads;
-  if (Type == TEXT("Ground"))     return Label::Ground;
-  if (Type == TEXT("Building"))   return Label::Buildings;
-  if (Type == TEXT("Vehicle"))    return Label::Car;
-  if (Type == TEXT("Bike"))       return Label::Bicycle;
-  if (Type == TEXT("Pedestrian")) return Label::Pedestrians;
-  if (Type == TEXT("Sign"))       return Label::TrafficSigns;
-  if (Type == TEXT("Signal"))     return Label::TrafficLight;
-  if (Type == TEXT("Foliage"))    return Label::Vegetation;
-  if (Type == TEXT("Prop"))       return Label::Static;
-
-  // Additional terrain and vegetation categories
-  if (Type == TEXT("Terrain"))    return Label::Terrain;
-  if (Type == TEXT("Grass"))      return Label::Terrain;
-  if (Type == TEXT("Tree"))       return Label::Vegetation;
-  if (Type == TEXT("Bush"))       return Label::Vegetation;
-  if (Type == TEXT("Vegetation")) return Label::Vegetation;
-
-  // Additional road marking categories
-  if (Type == TEXT("RoadLine"))       return Label::RoadLines;
-  if (Type == TEXT("RoadLines"))      return Label::RoadLines;
-  if (Type == TEXT("Crosswalk"))      return Label::RoadLines;
-  if (Type == TEXT("LaneMarking"))    return Label::RoadLines;
-  if (Type == TEXT("DashedMarking"))  return Label::RoadLines;
-  if (Type == TEXT("SolidMarking"))   return Label::RoadLines;
-  if (Type == TEXT("DoubleMarking"))  return Label::RoadLines;
-
-  // Additional vehicles
-  if (Type == TEXT("Car"))        return Label::Car;
-  if (Type == TEXT("Truck"))      return Label::Truck;
-  if (Type == TEXT("Bus"))        return Label::Bus;
-  if (Type == TEXT("Train"))      return Label::Train;
-  if (Type == TEXT("Motorcycle")) return Label::Motorcycle;
-  if (Type == TEXT("Bicycle"))    return Label::Bicycle;
-  if (Type == TEXT("Rider"))      return Label::Rider;
-
-  // Additional roadside objects
-  if (Type == TEXT("TrafficLight")) return Label::TrafficLight;
-  if (Type == TEXT("TrafficSign"))  return Label::TrafficSigns;
-  if (Type == TEXT("Pole"))         return Label::Poles;
-  if (Type == TEXT("Wall"))         return Label::Walls;
-  if (Type == TEXT("Fence"))        return Label::Fences;
-  if (Type == TEXT("GuardRail"))    return Label::GuardRail;
-  if (Type == TEXT("Guardrail"))    return Label::GuardRail;
-  if (Type == TEXT("Bridge"))       return Label::Bridge;
-  if (Type == TEXT("RailTrack"))    return Label::RailTrack;
-
-  // Additional categories
-  if (Type == TEXT("SideWalk")) return Label::Sidewalks;
-  if (Type == TEXT("Water"))    return Label::Water;
-  if (Type == TEXT("Static"))   return Label::Static;
-  if (Type == TEXT("Dynamic"))  return Label::Dynamic;
-  if (Type == TEXT("Other"))    return Label::Other;
 
   return Label::None;
 }
@@ -328,11 +270,11 @@ void AGltfMapLoader::ReceiveOnStaticMeshComponentCreated_Implementation(
     UE_LOG(LogTemp, Warning, TEXT("Applying uniform tag to mesh %d"), Node.MeshIndex);
     TagMesh(Component, Labels[0], GetUniqueID());
     CollectSignalMesh(Component, Node);
-    CollectSignalMesh(Component, Node);
     return;
   }
 
   FglTFRuntimeStaticMeshConfig Config = StaticMeshConfig;
+  
   Config.Outer = Component;
 
   const TArray<UStaticMesh*> Parts = Asset->LoadStaticMeshesFromPrimitives(Node.MeshIndex, Config);
@@ -356,7 +298,6 @@ void AGltfMapLoader::ReceiveOnStaticMeshComponentCreated_Implementation(
     PartComponent->RegisterComponent();
 
     TagMesh(PartComponent, Labels[i], GetUniqueID());
-    CollectSignalMesh(PartComponent, Node);
     CollectSignalMesh(PartComponent, Node);
   }
 

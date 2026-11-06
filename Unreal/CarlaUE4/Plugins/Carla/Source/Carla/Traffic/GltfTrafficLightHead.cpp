@@ -4,6 +4,8 @@
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Carla/Traffic/TrafficLightComponent.h"
+#include "Materials/MaterialInstance.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include <cstdio>
 
 static const char* GltfHeadStateName(ETrafficLightState State)
@@ -15,6 +17,43 @@ static const char* GltfHeadStateName(ETrafficLightState State)
     case ETrafficLightState::Green: return "Green";
     case ETrafficLightState::Off: return "Off";
     default: return "Unknown";
+  }
+}
+static void TintLampMesh(
+    UStaticMeshComponent* Mesh,
+    const FLinearColor& Tint)
+{
+  const FName Parameters[] = {TEXT("baseColorFactor"), TEXT("emissiveFactor")};
+
+  for (int32 Slot = 0; Slot < Mesh->GetNumMaterials(); ++Slot)
+  {
+    UMaterialInstanceDynamic* Original = Cast<UMaterialInstanceDynamic>(Mesh->GetMaterial(Slot));
+
+    if (!IsValid(Original))
+    {
+      continue;
+    }
+
+    UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(Original->Parent, Mesh);
+
+    if (!Material)
+    {
+      continue;
+    }
+
+    Material->CopyParameterOverrides(Original);
+
+    for (const FName& Parameter : Parameters)
+    {
+      FLinearColor Value;
+
+      if (Material->GetVectorParameterValue(Parameter, Value))
+      {
+        Material->SetVectorParameterValue(Parameter, Value * Tint);
+      }
+    }
+
+    Mesh->SetMaterial(Slot, Material);
   }
 }
 
@@ -31,6 +70,51 @@ void AGltfTrafficLightHead::AddLamp(const FLamp& Lamp)
   {
     return;
   }
+
+  FLinearColor Tint = FLinearColor::White;
+
+  if (Lamp.bOnVariant)
+  {
+    switch (Lamp.Color)
+    {
+      case ETrafficLightState::Red:
+        // Make the on version of the red bulb look more red
+        Tint = FLinearColor(1.0f, 0.5f, 0.5f, 1.0f);
+        break;
+
+      case ETrafficLightState::Yellow:
+        Tint = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        break;
+
+      case ETrafficLightState::Green:
+        Tint = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        break;
+
+      default:
+        break;
+    }
+  } else {
+    switch (Lamp.Color)
+    {
+      case ETrafficLightState::Red:
+        Tint = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        break;
+
+      case ETrafficLightState::Yellow:
+        // Make the off version of the yellow bulb look significantly less orange
+        Tint = FLinearColor(0.25f, 0.5f, 0.02f, 1.0f);
+        break;
+
+      case ETrafficLightState::Green:
+        Tint = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  TintLampMesh(Lamp.Mesh.Get(), Tint);
 
   Lamps.Add(Lamp);
 
