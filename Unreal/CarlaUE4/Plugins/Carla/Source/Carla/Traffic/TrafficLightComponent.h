@@ -10,6 +10,7 @@
 #include "SignComponent.h"
 #include "TrafficLightState.h"
 #include "Carla/Vehicle/WheeledVehicleAIController.h"
+
 #include "TrafficLightComponent.generated.h"
 
 class ATrafficLightManager;
@@ -42,6 +43,9 @@ public:
   ATrafficLightGroup* GetGroup();
 
   const ATrafficLightGroup* GetGroup() const;
+
+  UPROPERTY(Category = "Traffic Light", BlueprintAssignable)
+  FLightChangeDispatcher LightChangeDispatcher;
 
   void SetController(UTrafficLightController* Controller);
 
@@ -80,9 +84,6 @@ private:
 
   UPROPERTY(Category = "Traffic Light", EditAnywhere)
   ETrafficLightState LightState;
-
-  UPROPERTY(Category = "Traffic Light", BlueprintAssignable)
-  FLightChangeDispatcher LightChangeDispatcher;
 
   // UPROPERTY(Category = "Traffic Light", VisibleAnywhere)
   // ATrafficLightGroup *TrafficLightGroup = nullptr;

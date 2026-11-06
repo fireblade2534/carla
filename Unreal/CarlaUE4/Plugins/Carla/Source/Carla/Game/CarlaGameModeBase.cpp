@@ -18,6 +18,7 @@
 #include "Engine/StaticMeshActor.h"
 #include "Vehicle/VehicleSpawnPoint.h"
 #include "Util/BoundingBoxCalculator.h"
+#include "Carla/OpenDrive/GltfMapLoader.h"
 #include "EngineUtils.h"
 #include "Tagger.h"
 #include "TaggedComponent.h"
@@ -201,6 +202,11 @@ void ACarlaGameModeBase::BeginPlay()
 
   ATrafficLightManager* Manager = GetTrafficLightManager();
   Manager->InitializeTrafficLights();
+
+  for (TActorIterator<AGltfMapLoader> It(GetWorld()); It; ++It)
+  {
+    It->BindTrafficLightSources();
+  }
 
   Episode->InitializeAtBeginPlay();
   GameInstance->NotifyBeginEpisode(*Episode);

@@ -86,6 +86,10 @@ namespace road {
       return _signal_id;
     }
 
+    const SignId &GetRoadRunnerSignalId() const {
+      return _road_runner_signal_id;
+    }
+
     double GetS() const {
       return _s;
     }
@@ -183,6 +187,8 @@ namespace road {
     RoadId _road_id;
 
     SignId _signal_id;
+
+    std::string _road_runner_signal_id;
 
     double _s;
 
