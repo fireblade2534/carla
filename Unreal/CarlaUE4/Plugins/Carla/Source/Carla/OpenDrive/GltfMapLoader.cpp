@@ -249,7 +249,6 @@ void AGltfMapLoader::ReceiveOnStaticMeshComponentCreated_Implementation(
     {
       UE_LOG(LogTemp, Error, TEXT("Missing semantic type for primitive %d"), i);
       Labels.Add(Label::None);
-      Labels.Add(Label::None);
       continue;
     }
 
@@ -274,7 +273,7 @@ void AGltfMapLoader::ReceiveOnStaticMeshComponentCreated_Implementation(
   }
 
   FglTFRuntimeStaticMeshConfig Config = StaticMeshConfig;
-  
+
   Config.Outer = Component;
 
   const TArray<UStaticMesh*> Parts = Asset->LoadStaticMeshesFromPrimitives(Node.MeshIndex, Config);

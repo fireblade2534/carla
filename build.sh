@@ -2,9 +2,7 @@
 
 set -euo pipefail
 
-export UE4_ROOT="$(realpath ../UnrealEngine_4.26)"
-
-CARLA_BUILD_FOLDER="$PWD/Build"
+export UE4_ROOT="$(realpath "${UE4_ROOT:-../UnrealEngine_4.26}")"
 
 bash ./Util/BuildTools/Setup.sh --ros2
 bash  -o pipefail ./Util/BuildTools/BuildLibCarla.sh --server --release --ros2
