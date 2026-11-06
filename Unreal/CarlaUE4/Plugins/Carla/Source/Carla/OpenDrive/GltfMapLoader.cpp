@@ -92,22 +92,22 @@ static bool TryGetLamp(
 {
   Lamp.Mesh = Component;
 
-  if (NodeName == TEXT("light_red_off")) {
+  if (NodeName.StartsWith(TEXT("light_red_off"))) {
     Lamp.Color = ETrafficLightState::Red;
     Lamp.bOnVariant = false;
-  } else if (NodeName == TEXT("light_red_on")) {
+  } else if (NodeName.StartsWith(TEXT("light_red_on"))) {
     Lamp.Color = ETrafficLightState::Red;
     Lamp.bOnVariant = true;
-  } else if (NodeName == TEXT("light_yellow_off")) {
+  } else if (NodeName.StartsWith(TEXT("light_yellow_off"))) {
     Lamp.Color = ETrafficLightState::Yellow;
     Lamp.bOnVariant = false;
-  } else if (NodeName == TEXT("light_yellow_on")) {
+  } else if (NodeName.StartsWith(TEXT("light_yellow_on"))) {
     Lamp.Color = ETrafficLightState::Yellow;
     Lamp.bOnVariant = true;
-  } else if (NodeName == TEXT("light_green_off")) {
+  } else if (NodeName.StartsWith(TEXT("light_green_off"))) {
     Lamp.Color = ETrafficLightState::Green;
     Lamp.bOnVariant = false;
-  } else if (NodeName == TEXT("light_green_on")) {
+  } else if (NodeName.StartsWith(TEXT("light_green_on"))) {
     Lamp.Color = ETrafficLightState::Green;
     Lamp.bOnVariant = true;
   } else {
