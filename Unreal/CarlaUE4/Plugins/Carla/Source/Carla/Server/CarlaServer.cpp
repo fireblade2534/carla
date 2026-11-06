@@ -370,7 +370,7 @@ void FCarlaServer::FPimpl::BindActions()
     REQUIRE_CARLA_EPISODE();
     if (!Episode->LoadNewGLTFMap(gltf))
     {
-      RESPOND_ERROR("gltf could not be correctly parsed");
+      RESPOND_ERROR("failed to save GLTF file");
     }
     return R<void>::Success();
   };

@@ -253,10 +253,19 @@ bool UCarlaEpisode::LoadNewGLTFMap(const std::vector<uint8_t> &gltf)
   const FString AbsoluteGLTFPath = FPaths::ConvertRelativePathToFull(
       FPaths::ProjectContentDir() + "Carla/Maps/OpenDrive/GltfMap.gltf");
 
-  FFileHelper::SaveArrayToFile(
-      GLTFData,
-      *AbsoluteGLTFPath,
-      &IFileManager::Get());
+  if (!FFileHelper::SaveArrayToFile(
+    GLTFData,
+    *AbsoluteGLTFPath,
+    &IFileManager::Get()))
+  {
+    UE_LOG(
+      LogCarla,
+      Error,
+      TEXT("Failed to write GLTF file: %s"),
+      *AbsoluteGLTFPath
+    );
+    return false;
+  }
 
   if (!FPaths::FileExists(AbsoluteGLTFPath))
   {

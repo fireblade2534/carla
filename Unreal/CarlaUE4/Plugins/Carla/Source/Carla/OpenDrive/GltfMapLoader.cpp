@@ -6,21 +6,12 @@
 #include "Carla/Traffic/TrafficLightManager.h"
 #include "Carla/Traffic/TrafficLightComponent.h"
 #include "Engine/World.h"
-#include "Carla/Game/CarlaGameModeBase.h"
-#include "Carla/Traffic/TrafficLightManager.h"
-#include "Carla/Traffic/TrafficLightComponent.h"
-#include "Engine/World.h"
 #include "Components/StaticMeshComponent.h"
 #include "Carla/Traffic/TrafficLightState.h"
 #include "Carla/Traffic/TrafficLightBase.h"
 #include "glTFRuntimeFunctionLibrary.h"
 #include "Misc/Paths.h"
 #include <cstdio>
-
-#include <compiler/disable-ue4-macros.h>
-#include <carla/road/Map.h>
-#include <carla/road/Signal.h>
-#include <compiler/enable-ue4-macros.h>
 
 #include <compiler/disable-ue4-macros.h>
 #include <carla/road/Map.h>
