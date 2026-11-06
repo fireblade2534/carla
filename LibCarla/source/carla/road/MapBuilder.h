@@ -175,6 +175,10 @@ namespace road {
         const double pitch,
         const double roll);
 
+    void SetSignalRoadRunnerId(
+        const SignId signal_id,
+        const std::string &road_runner_signal_id);
+
     void AddSignalPositionInertial(
         const SignId signal_id,
         const double x,

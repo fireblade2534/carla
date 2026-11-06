@@ -282,6 +282,12 @@ namespace road {
     return AddSignalReference(road, signal_id, s, t, orientation);
   }
 
+  void MapBuilder::SetSignalRoadRunnerId(
+    const SignId signal_id,
+    const std::string &road_runner_signal_id) {
+    _temp_signal_container.at(signal_id)->_road_runner_signal_id = road_runner_signal_id;
+  }
+
   void MapBuilder::AddSignalPositionInertial(
       const SignId signal_id,
       const double x,

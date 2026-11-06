@@ -106,6 +106,19 @@ namespace parser {
               roll);
           AddValidity(signal_reference, signal_node, "validity", map_builder);
 
+          for (pugi::xml_node user_data : signal_node.children("userData")) {
+            const auto road_runner_id =
+                user_data.child("vectorSignal").attribute("signalId");
+
+            if (road_runner_id) {
+              map_builder.SetSignalRoadRunnerId(
+                  signal_id,
+                  road_runner_id.value());
+
+              break;
+            }
+          }
+
           for (pugi::xml_node dependency_node : signal_node.children("dependency")) {
             const std::string dependency_id = dependency_node.attribute("id").value();
             const std::string dependency_type = dependency_node.attribute("type").value();
