@@ -91,7 +91,7 @@ static auto FWorldObserver_GetActorState(const FCarlaActor &View, const FActorRe
       {
         // Old way: traffic lights are actors
         state.traffic_light_data.sign_id[0] = '\0';
-        state.traffic_light_data.state = ToRpcTrafficLightState(TrafficLightComponent->GetLightState());;
+        state.traffic_light_data.state = ToRpcTrafficLightState(TrafficLight->GetTrafficLightState());
         state.traffic_light_data.green_time = TrafficLight->GetGreenTime();
         state.traffic_light_data.yellow_time = TrafficLight->GetYellowTime();
         state.traffic_light_data.red_time = TrafficLight->GetRedTime();
