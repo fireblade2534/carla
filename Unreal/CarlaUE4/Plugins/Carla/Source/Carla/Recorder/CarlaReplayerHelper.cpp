@@ -26,6 +26,7 @@
 #include "Carla/Walker/WalkerController.h"
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
+#include "Carla/Traffic/TrafficLightStateConversions.h"
 
 #include <compiler/disable-ue4-macros.h>
 #include <carla/rpc/VehicleLightState.h>
@@ -375,7 +376,14 @@ bool CarlaReplayerHelper::ProcessReplayerStateTrafficLight(CarlaRecorderStateTra
   FCarlaActor* CarlaActor = Episode->FindCarlaActor(State.DatabaseId);
   if(CarlaActor)
   {
-    CarlaActor->SetTrafficLightState(static_cast<ETrafficLightState>(State.State));
+    FTrafficLightState LightState;
+
+    if (!TryDecodeTrafficLightState(static_cast<uint8>(State.State), LightState))
+    {
+      return false;
+    }
+
+    CarlaActor->SetTrafficLightState(LightState);
     UTrafficLightController* Controller = CarlaActor->GetTrafficLightController();
     if(Controller)
     {

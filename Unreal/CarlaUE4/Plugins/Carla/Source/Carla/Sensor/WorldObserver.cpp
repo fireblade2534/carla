@@ -18,6 +18,7 @@
 #include "Carla/Traffic/TrafficSignBase.h"
 #include "Carla/Traffic/SignComponent.h"
 #include "Carla/Walker/WalkerController.h"
+#include "Carla/Traffic/TrafficLightStateConversions.h"
 
 #include "CoreGlobals.h"
 
@@ -42,8 +43,7 @@ static auto FWorldObserver_GetActorState(const FCarlaActor &View, const FActorRe
       auto Controller = Cast<AWheeledVehicleAIController>(Vehicle->GetController());
       if (Controller != nullptr)
       {
-        using TLS = carla::rpc::TrafficLightState;
-        state.vehicle_data.traffic_light_state = static_cast<TLS>(Controller->GetTrafficLightState());
+        state.vehicle_data.traffic_light_state = ToRpcTrafficLightState(Controller->GetTrafficLightState());
         state.vehicle_data.speed_limit = Controller->GetSpeedLimit();
         auto TrafficLight = Controller->GetTrafficLight();
         if (TrafficLight != nullptr)
@@ -87,13 +87,11 @@ static auto FWorldObserver_GetActorState(const FCarlaActor &View, const FActorRe
       auto* TrafficLightComponent =
           TrafficLight->GetTrafficLightComponent();
 
-      using TLS = carla::rpc::TrafficLightState;
-
       if(TrafficLightComponent == nullptr)
       {
         // Old way: traffic lights are actors
         state.traffic_light_data.sign_id[0] = '\0';
-        state.traffic_light_data.state = static_cast<TLS>(TrafficLight->GetTrafficLightState());
+        state.traffic_light_data.state = ToRpcTrafficLightState(TrafficLightComponent->GetLightState());;
         state.traffic_light_data.green_time = TrafficLight->GetGreenTime();
         state.traffic_light_data.yellow_time = TrafficLight->GetYellowTime();
         state.traffic_light_data.red_time = TrafficLight->GetRedTime();
@@ -127,7 +125,7 @@ static auto FWorldObserver_GetActorState(const FCarlaActor &View, const FActorRe
           }
           std::memset(state.traffic_light_data.sign_id, '\0', max_size);
           std::memcpy(state.traffic_light_data.sign_id, sign_id.c_str(), sign_id_length);
-          state.traffic_light_data.state = static_cast<TLS>(TrafficLightComponent->GetLightState());
+          state.traffic_light_data.state = ToRpcTrafficLightState(TrafficLightComponent->GetLightState());
           state.traffic_light_data.green_time = Controller->GetGreenTime();
           state.traffic_light_data.yellow_time = Controller->GetYellowTime();
           state.traffic_light_data.red_time = Controller->GetRedTime();
@@ -216,7 +214,7 @@ static auto FWorldObserver_GetDormantActorState(const FCarlaActor &View, const F
         }
         std::memset(state.traffic_light_data.sign_id, '\0', max_size);
         std::memcpy(state.traffic_light_data.sign_id, sign_id.c_str(), sign_id_length);
-        state.traffic_light_data.state = static_cast<TLS>(Controller->GetCurrentState().State);
+        state.traffic_light_data.state = ToRpcTrafficLightState(ActorData->LightState);;
         state.traffic_light_data.green_time = Controller->GetGreenTime();
         state.traffic_light_data.yellow_time = Controller->GetYellowTime();
         state.traffic_light_data.red_time = Controller->GetRedTime();

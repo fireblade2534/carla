@@ -178,14 +178,14 @@ public:
 
   /// Get traffic light state currently affecting this vehicle.
   UFUNCTION(Category = "Wheeled Vehicle Controller", BlueprintCallable)
-  ETrafficLightState GetTrafficLightState() const
+  FTrafficLightState GetTrafficLightState() const
   {
     return TrafficLightState;
   }
 
   /// Set traffic light state currently affecting this vehicle.
   UFUNCTION(Category = "Wheeled Vehicle Controller", BlueprintCallable)
-  void SetTrafficLightState(ETrafficLightState InTrafficLightState)
+  void SetTrafficLightState(FTrafficLightState InTrafficLightState)
   {
     TrafficLightState = InTrafficLightState;
   }
@@ -231,7 +231,7 @@ private:
   float SpeedLimit = 30.0f;
 
   UPROPERTY(VisibleAnywhere)
-  ETrafficLightState TrafficLightState = ETrafficLightState::Green;
+  FTrafficLightState TrafficLightState = FTrafficLightState::Green;
 
   UPROPERTY(VisibleAnywhere)
   float MaximumSteerAngle = -1.0f;

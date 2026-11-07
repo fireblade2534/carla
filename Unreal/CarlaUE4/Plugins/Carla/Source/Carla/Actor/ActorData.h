@@ -112,7 +112,7 @@ public:
 
   UTrafficLightController* Controller;
 
-  ETrafficLightState LightState;
+  FTrafficLightState LightState;
 
   FString SignId;
 

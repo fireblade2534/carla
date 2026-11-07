@@ -227,7 +227,7 @@ void UStopSignComponent::GiveWayIfPossible()
     {
       AWheeledVehicleAIController* VehicleController =
         Cast<AWheeledVehicleAIController>(Vehicle->GetController());
-      VehicleController->SetTrafficLightState(ETrafficLightState::Green);
+      VehicleController->SetTrafficLightState(FTrafficLightState::Green);
     }
   }
   else
@@ -238,7 +238,7 @@ void UStopSignComponent::GiveWayIfPossible()
       {
         AWheeledVehicleAIController* VehicleController =
           Cast<AWheeledVehicleAIController>(Vehicle->GetController());
-        VehicleController->SetTrafficLightState(ETrafficLightState::Red);
+        VehicleController->SetTrafficLightState(FTrafficLightState::Red);
       }
       // 1 second delay
       DelayedGiveWay(1.0f);
@@ -267,7 +267,7 @@ void UStopSignComponent::OnOverlapBeginStopEffectBox(UPrimitiveComponent *Overla
         Cast<AWheeledVehicleAIController>(Vehicle->GetController());
     if (VehicleController)
     {
-      VehicleController->SetTrafficLightState(ETrafficLightState::Red);
+      VehicleController->SetTrafficLightState(FTrafficLightState::Red);
       VehiclesInStop.Add(Vehicle);
 
       // 2 second delay for stop

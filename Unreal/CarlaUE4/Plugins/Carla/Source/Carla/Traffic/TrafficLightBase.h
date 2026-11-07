@@ -27,10 +27,10 @@ public:
   ATrafficLightBase(const FObjectInitializer &ObjectInitializer);
 
   UFUNCTION(Category = "Traffic Light", BlueprintCallable)
-  ETrafficLightState GetTrafficLightState() const;
+  FTrafficLightState GetTrafficLightState() const;
 
   UFUNCTION(Category = "Traffic Light", BlueprintCallable)
-  void SetTrafficLightState(ETrafficLightState State);
+  void SetTrafficLightState(FTrafficLightState State);
 
   UFUNCTION(Category = "Traffic Light", BlueprintCallable)
   void NotifyWheeledVehicle(ACarlaWheeledVehicle *Vehicle);
@@ -86,14 +86,14 @@ public:
   const UTrafficLightComponent* GetTrafficLightComponent() const;
 
   // Compatibility old traffic light system with traffic light components
-  void LightChangedCompatibility(ETrafficLightState NewLightState);
+  void LightChangedCompatibility(FTrafficLightState NewLightState);
 
   void AddTimeToRecorder();
 
 protected:
 
   UFUNCTION(Category = "Traffic Light", BlueprintImplementableEvent)
-  void OnTrafficLightStateChanged(ETrafficLightState TrafficLightState);
+  void OnTrafficLightStateChanged(FTrafficLightState TrafficLightState);
 
 private:
 

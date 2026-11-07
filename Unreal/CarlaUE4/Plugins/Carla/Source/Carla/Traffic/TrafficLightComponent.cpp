@@ -109,7 +109,7 @@ void UTrafficLightComponent::GenerateTrafficLightBox(const FTransform BoxTransfo
   AddEffectTriggerVolume(BoxComponent);
 }
 
-void UTrafficLightComponent::SetLightState(ETrafficLightState NewState)
+void UTrafficLightComponent::SetLightState(FTrafficLightState NewState)
 {
   LightState = NewState;
   LightChangeDispatcher.Broadcast();
@@ -132,7 +132,7 @@ void UTrafficLightComponent::SetLightState(ETrafficLightState NewState)
   }
 }
 
-ETrafficLightState UTrafficLightComponent::GetLightState() const
+FTrafficLightState UTrafficLightComponent::GetLightState() const
 {
   return LightState;
 }
@@ -198,7 +198,7 @@ void UTrafficLightComponent::OnEndOverlapTriggerBox(UPrimitiveComponent *Overlap
         Cast<AWheeledVehicleAIController>(Vehicle->GetController());
     if (VehicleController)
     {
-      VehicleController->SetTrafficLightState(ETrafficLightState::Green);
+      VehicleController->SetTrafficLightState(FTrafficLightState::Green);
       VehicleController->SetTrafficLight(nullptr);
       Vehicles.Remove(VehicleController);
     }

@@ -99,7 +99,7 @@ bool UTrafficLightController::IsCycleFinished() const
   return CurrentState == (LightStates.Num() - 1);
 }
 
-void UTrafficLightController::SetTrafficLightsState(ETrafficLightState NewState)
+void UTrafficLightController::SetTrafficLightsState(FTrafficLightState NewState)
 {
   SetCurrentLightState(NewState);
   for(auto *Light : TrafficLights)
@@ -131,35 +131,35 @@ void UTrafficLightController::ResetState()
 
 void UTrafficLightController::SetYellowTime(float NewTime)
 {
-  SetStateTime(ETrafficLightState::Yellow, NewTime);
+  SetStateTime(FTrafficLightState::Yellow, NewTime);
 }
 
 void UTrafficLightController::SetRedTime(float NewTime)
 {
-  SetStateTime(ETrafficLightState::Red, NewTime);
+  SetStateTime(FTrafficLightState::Red, NewTime);
 }
 
 void UTrafficLightController::SetGreenTime(float NewTime)
 {
-  SetStateTime(ETrafficLightState::Green, NewTime);
+  SetStateTime(FTrafficLightState::Green, NewTime);
 }
 
 float UTrafficLightController::GetGreenTime() const
 {
-  return GetStateTime(ETrafficLightState::Green);
+  return GetStateTime(FTrafficLightState::Green);
 }
 
 float UTrafficLightController::GetYellowTime() const
 {
-  return GetStateTime(ETrafficLightState::Yellow);
+  return GetStateTime(FTrafficLightState::Yellow);
 }
 
 float UTrafficLightController::GetRedTime() const
 {
-  return GetStateTime(ETrafficLightState::Red);
+  return GetStateTime(FTrafficLightState::Red);
 }
 
-void UTrafficLightController::SetStateTime(const ETrafficLightState State, float NewTime)
+void UTrafficLightController::SetStateTime(const FTrafficLightState State, float NewTime)
 {
   for(auto& LightState : LightStates)
   {
@@ -170,7 +170,7 @@ void UTrafficLightController::SetStateTime(const ETrafficLightState State, float
   }
 }
 
-float UTrafficLightController::GetStateTime(const ETrafficLightState State) const
+float UTrafficLightController::GetStateTime(const FTrafficLightState State) const
 {
   for(auto& LightState : LightStates)
   {

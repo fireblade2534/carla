@@ -35,6 +35,7 @@
 #include "Carla/Actor/ActorData.h"
 #include "CarlaServerResponse.h"
 #include "Carla/Util/BoundingBoxCalculator.h"
+#include "Carla/Traffic/TrafficLightStateConversions.h"
 #include "Misc/FileHelper.h"
 
 #include <compiler/disable-ue4-macros.h>
@@ -2586,9 +2587,14 @@ BIND_SYNC(is_sensor_enabled_for_ros) << [this](carla::streaming::detail::stream_
           ECarlaServerResponse::ActorNotFound,
           " Actor Id: " + FString::FromInt(ActorId));
     }
-    ECarlaServerResponse Response =
-        CarlaActor->SetTrafficLightState(
-        static_cast<ETrafficLightState>(trafficLightState));
+    FTrafficLightState NewState;
+
+    if (!TryFromRpcTrafficLightState(trafficLightState, NewState))
+    {
+      RESPOND_ERROR("Unsupported traffic light state");
+    }
+
+    ECarlaServerResponse Response = CarlaActor->SetTrafficLightState(NewState);
     if (Response != ECarlaServerResponse::Success)
     {
       return RespondError(

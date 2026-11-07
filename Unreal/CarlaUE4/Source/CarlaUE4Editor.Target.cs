@@ -12,6 +12,9 @@ public class CarlaUE4EditorTarget : TargetRules
 		Type = TargetType.Editor;
 		ExtraModuleNames.Add("CarlaUE4");
 
+		CppStandard = CppStandardVersion.Cpp17;
+		BuildEnvironment = TargetBuildEnvironment.Unique;
+
 		string ConfigDir = Path.GetDirectoryName(ProjectFile.ToString()) + "/Config/";
 		string OptionalModulesFile = Path.Combine(ConfigDir, "OptionalModules.ini");
 		string[] text = System.IO.File.ReadAllLines(OptionalModulesFile);

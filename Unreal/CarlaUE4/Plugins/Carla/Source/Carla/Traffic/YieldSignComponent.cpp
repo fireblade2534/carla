@@ -233,7 +233,7 @@ void UYieldSignComponent::GiveWayIfPossible()
     {
       AWheeledVehicleAIController* VehicleController =
         Cast<AWheeledVehicleAIController>(Vehicle->GetController());
-      VehicleController->SetTrafficLightState(ETrafficLightState::Green);
+      VehicleController->SetTrafficLightState(FTrafficLightState::Green);
     }
   }
   else
@@ -244,7 +244,7 @@ void UYieldSignComponent::GiveWayIfPossible()
       {
         AWheeledVehicleAIController* VehicleController =
           Cast<AWheeledVehicleAIController>(Vehicle->GetController());
-        VehicleController->SetTrafficLightState(ETrafficLightState::Red);
+        VehicleController->SetTrafficLightState(FTrafficLightState::Red);
       }
       // 0.5 second delay
       DelayedGiveWay(0.5f);

@@ -8,14 +8,14 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include <cstdio>
 
-static const char* GltfHeadStateName(ETrafficLightState State)
+static const char* GltfHeadStateName(FTrafficLightState State)
 {
   switch (State)
   {
-    case ETrafficLightState::Red: return "Red";
-    case ETrafficLightState::Yellow: return "Yellow";
-    case ETrafficLightState::Green: return "Green";
-    case ETrafficLightState::Off: return "Off";
+    case FTrafficLightState::Red: return "Red";
+    case FTrafficLightState::Yellow: return "Yellow";
+    case FTrafficLightState::Green: return "Green";
+    case FTrafficLightState::Off: return "Off";
     default: return "Unknown";
   }
 }
@@ -77,16 +77,16 @@ void AGltfTrafficLightHead::AddLamp(const FLamp& Lamp)
   {
     switch (Lamp.Color)
     {
-      case ETrafficLightState::Red:
+      case FTrafficLightState::Red:
         // Make the on version of the red bulb look more red
         Tint = FLinearColor(1.0f, 0.5f, 0.5f, 1.0f);
         break;
 
-      case ETrafficLightState::Yellow:
+      case FTrafficLightState::Yellow:
         Tint = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
         break;
 
-      case ETrafficLightState::Green:
+      case FTrafficLightState::Green:
         Tint = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
         break;
 
@@ -96,16 +96,16 @@ void AGltfTrafficLightHead::AddLamp(const FLamp& Lamp)
   } else {
     switch (Lamp.Color)
     {
-      case ETrafficLightState::Red:
+      case FTrafficLightState::Red:
         Tint = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
         break;
 
-      case ETrafficLightState::Yellow:
+      case FTrafficLightState::Yellow:
         // Make the off version of the yellow bulb look significantly less orange
         Tint = FLinearColor(0.25f, 0.5f, 0.02f, 1.0f);
         break;
 
-      case ETrafficLightState::Green:
+      case FTrafficLightState::Green:
         Tint = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
         break;
 
@@ -145,9 +145,9 @@ void AGltfTrafficLightHead::SetSourceSignal(UTrafficLightComponent* Signal)
 void AGltfTrafficLightHead::OnSignalChanged()
 {
   const bool bValidSource = IsValid(SourceSignal);
-  const ETrafficLightState State = bValidSource
+  const FTrafficLightState State = bValidSource
       ? SourceSignal->GetLightState()
-      : ETrafficLightState::Off;
+      : FTrafficLightState::Off;
   const FString SignalId = bValidSource ? SourceSignal->GetSignId() : TEXT("<none>");
 
   for (const FLamp& Lamp : Lamps)

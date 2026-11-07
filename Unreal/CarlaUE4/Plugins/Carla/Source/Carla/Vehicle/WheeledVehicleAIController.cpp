@@ -168,7 +168,7 @@ void AWheeledVehicleAIController::ConfigureAutopilot(const bool Enable, const bo
         ECarlaWheeledVehicleState::AutopilotOff);
   }
 
-  TrafficLightState = ETrafficLightState::Green;
+  TrafficLightState = FTrafficLightState::Green;
 }
 
 // =============================================================================

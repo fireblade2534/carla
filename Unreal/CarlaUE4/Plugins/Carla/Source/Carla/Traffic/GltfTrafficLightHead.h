@@ -18,7 +18,7 @@ struct FLamp
   TWeakObjectPtr<UStaticMeshComponent> Mesh;
 
   UPROPERTY()
-  ETrafficLightState Color = ETrafficLightState::Red;
+  FTrafficLightState Color = FTrafficLightState::Red;
 
   UPROPERTY()
   bool bOnVariant = false;

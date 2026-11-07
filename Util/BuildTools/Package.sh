@@ -138,7 +138,7 @@ function cook_tagged_materials {
   else
     TARGET_ARCHIVE_OPTION=
   fi
-  ${UE4_ROOT}/Engine/Binaries/Linux/UE4Editor "${CARLAUE4_ROOT_FOLDER}/CarlaUE4.uproject" \
+  ${CARLAUE4_ROOT_FOLDER}/Binaries/Linux/CarlaUE4Editor "${CARLAUE4_ROOT_FOLDER}/CarlaUE4.uproject" \
   -run=GenerateTaggedMaterialsRegistry -PackageNames=${CUR_PACKAGES_UE} ${TARGET_ARCHIVE_OPTION} \
   -NoShaderCompile
 
@@ -158,7 +158,7 @@ function cook_tagged_materials {
 
   # Cook the temporary map(s).
   log "Cook TaggedMaterialsRegistries"
-  ${UE4_ROOT}/Engine/Binaries/Linux/UE4Editor "${CARLAUE4_ROOT_FOLDER}/CarlaUE4.uproject" \
+  ${CARLAUE4_ROOT_FOLDER}/Binaries/Linux/CarlaUE4Editor "${CARLAUE4_ROOT_FOLDER}/CarlaUE4.uproject" \
   -run=cook -map="${MAPS_COOKING_STR}" \
   -targetplatform="LinuxNoEditor" -OutputDir="${TEMP_BUILD_DIR}" -iterate -cooksinglepackage
 
@@ -419,7 +419,7 @@ for PACKAGE_NAME in "${PACKAGES[@]}" ; do if [[ ${PACKAGE_NAME} != "Carla" ]] ; 
   pushd "${CARLAUE4_ROOT_FOLDER}" > /dev/null
 
   # Prepare cooking of package
-  ${UE4_ROOT}/Engine/Binaries/Linux/UE4Editor "${CARLAUE4_ROOT_FOLDER}/CarlaUE4.uproject" \
+  ${CARLAUE4_ROOT_FOLDER}/Binaries/Linux/CarlaUE4Editor "${CARLAUE4_ROOT_FOLDER}/CarlaUE4.uproject" \
       -run=PrepareAssetsForCooking -PackageName=${PACKAGE_NAME} -OnlyPrepareMaps=false
 
   PACKAGE_FILE=$(<${PACKAGE_PATH_FILE})
@@ -434,7 +434,7 @@ for PACKAGE_NAME in "${PACKAGES[@]}" ; do if [[ ${PACKAGE_NAME} != "Carla" ]] ; 
   for MAP in "${MAP_LIST[@]}"; do
     if (($(($TOTAL+${#MAP})) > $MAX_STRINGLENGTH)); then
       echo "Cooking $MAP_STRING"
-      ${UE4_ROOT}/Engine/Binaries/Linux/UE4Editor "${CARLAUE4_ROOT_FOLDER}/CarlaUE4.uproject" \
+      ${CARLAUE4_ROOT_FOLDER}/Binaries/Linux/CarlaUE4Editor "${CARLAUE4_ROOT_FOLDER}/CarlaUE4.uproject" \
           -run=cook -map="${MAP_STRING}" -cooksinglepackage -targetplatform="LinuxNoEditor" \
           -OutputDir="${BUILD_FOLDER}" -iterate
       MAP_STRING=""
@@ -444,7 +444,7 @@ for PACKAGE_NAME in "${PACKAGES[@]}" ; do if [[ ${PACKAGE_NAME} != "Carla" ]] ; 
     TOTAL=$(($TOTAL+${#MAP}))
   done
   if (($TOTAL > 0)); then
-    ${UE4_ROOT}/Engine/Binaries/Linux/UE4Editor "${CARLAUE4_ROOT_FOLDER}/CarlaUE4.uproject" \
+    ${CARLAUE4_ROOT_FOLDER}/Binaries/Linux/CarlaUE4Editor "${CARLAUE4_ROOT_FOLDER}/CarlaUE4.uproject" \
         -run=cook -map="${MAP_STRING}" -cooksinglepackage -targetplatform="LinuxNoEditor" \
         -OutputDir="${BUILD_FOLDER}" -iterate
   fi

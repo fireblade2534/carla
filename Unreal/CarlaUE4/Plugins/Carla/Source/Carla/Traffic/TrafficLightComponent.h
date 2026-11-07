@@ -31,10 +31,10 @@ public:
   UTrafficLightComponent();
 
   UFUNCTION(Category = "Traffic Light", BlueprintCallable)
-  void SetLightState(ETrafficLightState NewState);
+  void SetLightState(FTrafficLightState NewState);
 
   UFUNCTION(Category = "Traffic Light", BlueprintCallable)
-  ETrafficLightState GetLightState() const;
+  FTrafficLightState GetLightState() const;
 
   UFUNCTION(Category = "Traffic Light", BlueprintCallable)
   void SetFrozenGroup(bool InFreeze);
@@ -83,7 +83,7 @@ private:
       const FVector BoxSize);
 
   UPROPERTY(Category = "Traffic Light", EditAnywhere)
-  ETrafficLightState LightState;
+  FTrafficLightState LightState;
 
   // UPROPERTY(Category = "Traffic Light", VisibleAnywhere)
   // ATrafficLightGroup *TrafficLightGroup = nullptr;

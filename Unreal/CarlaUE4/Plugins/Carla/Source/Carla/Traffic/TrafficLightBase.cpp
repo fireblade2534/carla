@@ -19,16 +19,16 @@ static bool IsValid(const ACarlaWheeledVehicle *Vehicle)
   return ((Vehicle != nullptr) && !Vehicle->IsPendingKill());
 }
 
-static ETrafficSignState ToTrafficSignState(ETrafficLightState State)
+static ETrafficSignState ToTrafficSignState(FTrafficLightState State)
 {
   switch (State)
   {
-    case ETrafficLightState::Green:
+    case FTrafficLightState::Green:
       return ETrafficSignState::TrafficLightGreen;
-    case ETrafficLightState::Yellow:
+    case FTrafficLightState::Yellow:
       return ETrafficSignState::TrafficLightYellow;
     default:
-    case ETrafficLightState::Red:
+    case FTrafficLightState::Red:
       return ETrafficSignState::TrafficLightRed;
   }
 }
@@ -49,7 +49,7 @@ ATrafficLightBase::ATrafficLightBase(const FObjectInitializer &ObjectInitializer
   SetTrafficSignState(ETrafficSignState::TrafficLightGreen);
 }
 
-ETrafficLightState ATrafficLightBase::GetTrafficLightState() const
+FTrafficLightState ATrafficLightBase::GetTrafficLightState() const
 {
   if (TrafficLightComponent)
   {
@@ -57,11 +57,11 @@ ETrafficLightState ATrafficLightBase::GetTrafficLightState() const
   }
   else
   {
-    return ETrafficLightState::Red;
+    return FTrafficLightState::Red;
   }
 }
 
-void ATrafficLightBase::SetTrafficLightState(const ETrafficLightState InState)
+void ATrafficLightBase::SetTrafficLightState(const FTrafficLightState InState)
 {
   if(TrafficLightComponent)
   {
@@ -92,7 +92,7 @@ void ATrafficLightBase::UnNotifyWheeledVehicle(ACarlaWheeledVehicle *Vehicle)
     if (Controller != nullptr)
     {
       Controller->SetTrafficLight(nullptr);
-      Controller->SetTrafficLightState(ETrafficLightState::Green);
+      Controller->SetTrafficLightState(FTrafficLightState::Green);
     }
   }
 }
@@ -273,7 +273,7 @@ void ATrafficLightBase::AddTimeToRecorder()
   }
 }
 
-void ATrafficLightBase::LightChangedCompatibility(ETrafficLightState NewLightState)
+void ATrafficLightBase::LightChangedCompatibility(FTrafficLightState NewLightState)
 {
   OnTrafficLightStateChanged(NewLightState);
 }

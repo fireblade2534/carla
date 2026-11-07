@@ -18,6 +18,7 @@
 #include "Carla/Walker/WalkerController.h"
 #include "Components/BoxComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Carla/Traffic/TrafficLightStateConversions.h"
 #include "VehicleAnimInstance.h"
 
 #include <compiler/disable-ue4-macros.h>
@@ -30,7 +31,7 @@
 #include <ctime>
 #include <sstream>
 
-#define RECORDER_VERSION    (2)
+#define RECORDER_VERSION    (3)
 
 ACarlaRecorder::ACarlaRecorder(void)
 {
@@ -276,7 +277,7 @@ void ACarlaRecorder::AddTrafficLightState(FCarlaActor *CarlaActor)
 {
   check(CarlaActor != nullptr);
 
-  ETrafficLightState LightState = CarlaActor->GetTrafficLightState();
+  const FTrafficLightState LightState = CarlaActor->GetTrafficLightState();
   UTrafficLightController* Controller = CarlaActor->GetTrafficLightController();
   if (Controller)
   {
@@ -288,7 +289,7 @@ void ACarlaRecorder::AddTrafficLightState(FCarlaActor *CarlaActor)
         CarlaActor->GetActorId(),
         Group->IsFrozen(),
         Controller->GetElapsedTime(),
-        static_cast<char>(LightState)
+        static_cast<char>(EncodeTrafficLightState(LightState))
       });
     }
   }

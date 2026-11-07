@@ -366,14 +366,14 @@ public:
 
   // Traffic light functions
 
-  virtual ECarlaServerResponse SetTrafficLightState(const ETrafficLightState&)
+  virtual ECarlaServerResponse SetTrafficLightState(const FTrafficLightState&)
   {
     return ECarlaServerResponse::ActorTypeMismatch;
   }
 
-  virtual ETrafficLightState GetTrafficLightState() const
+  virtual FTrafficLightState GetTrafficLightState() const
   {
-    return ETrafficLightState::Off;
+    return FTrafficLightState::Off;
   }
 
   virtual UTrafficLightController* GetTrafficLightController()
@@ -598,9 +598,9 @@ public:
       carla::rpc::ActorState InState,
       UWorld* World);
 
-  virtual ECarlaServerResponse SetTrafficLightState(const ETrafficLightState& State) final;
+  virtual ECarlaServerResponse SetTrafficLightState(const FTrafficLightState& State) final;
 
-  virtual ETrafficLightState GetTrafficLightState() const final;
+  virtual FTrafficLightState GetTrafficLightState() const final;
 
   virtual UTrafficLightController* GetTrafficLightController() final;
 

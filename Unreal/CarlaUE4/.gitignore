@@ -29,6 +29,22 @@ Makefile
 
 /Content/Carla/*
 !/Content/Carla/Maps
+!/Content/Carla/Blueprints
+!/Content/Carla/Static
 
 /Content/Carla/Maps/*
 !/Content/Carla/Maps/GltfMap.umap
+
+/Content/Carla/Blueprints/*
+!/Content/Carla/Blueprints/TrafficLight
+
+/Content/Carla/Static/*
+!/Content/Carla/Static/TrafficLight
+
+/Content/Carla/Static/TrafficLight/*
+!/Content/Carla/Static/TrafficLight/Streetlights_01/
+
+/Content/Carla/Static/TrafficLight/Streetlights_01/*
+!/Content/Carla/Static/TrafficLight/Streetlights_01/BP_TrafficLightGroup.uasset
+!/Content/Carla/Static/TrafficLight/Streetlights_01/BP_TrafficLightNew.uasset
+!/Content/Carla/Static/TrafficLight/Streetlights_01/BP_TrafficLight.uasset

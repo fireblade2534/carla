@@ -14,6 +14,7 @@
 #include "Carla/Game/CarlaStatics.h"
 #include "Carla/Settings/CarlaSettings.h"
 #include "Carla/Lights/CarlaLightSubsystem.h"
+#include "Carla/Traffic/TrafficLightStateConversions.h"
 
 #include <compiler/disable-ue4-macros.h>
 #include "carla/rpc/VehicleLightState.h"
@@ -485,7 +486,7 @@ void FFrameData::AddTrafficLightState(FCarlaActor *CarlaActor)
 {
   check(CarlaActor != nullptr);
 
-  ETrafficLightState LightState = CarlaActor->GetTrafficLightState();
+  const FTrafficLightState LightState = CarlaActor->GetTrafficLightState();
   UTrafficLightController* Controller = CarlaActor->GetTrafficLightController();
   if (Controller)
   {
@@ -497,7 +498,7 @@ void FFrameData::AddTrafficLightState(FCarlaActor *CarlaActor)
         CarlaActor->GetActorId(),
         Group->IsFrozen(),
         Controller->GetElapsedTime(),
-        static_cast<char>(LightState)
+        static_cast<char>(EncodeTrafficLightState(LightState))
       });
     }
   }
@@ -983,7 +984,14 @@ bool FFrameData::ProcessReplayerStateTrafficLight(CarlaRecorderStateTrafficLight
   FCarlaActor* CarlaActor = Episode->FindCarlaActor(State.DatabaseId);
   if(CarlaActor)
   {
-    CarlaActor->SetTrafficLightState(static_cast<ETrafficLightState>(State.State));
+    FTrafficLightState LightState;
+
+    if (!TryDecodeTrafficLightState(static_cast<uint8>(State.State), LightState))
+    {
+      return false;
+    }
+
+    CarlaActor->SetTrafficLightState(LightState);
     UTrafficLightController* Controller = CarlaActor->GetTrafficLightController();
     if(Controller)
     {

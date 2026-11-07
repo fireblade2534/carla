@@ -23,5 +23,5 @@ class ITrafficLightInterface
 
 public:
   UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Traffic Light Interface")
-  void LightChanged(ETrafficLightState NewLightState);
+  void LightChanged(FTrafficLightState NewLightState);
 };

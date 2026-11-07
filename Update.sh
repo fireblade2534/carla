@@ -55,10 +55,7 @@ CONTENT_LINK=https://carla-assets.s3.us-east-005.backblazeb2.com/${CONTENT_ID}.t
 VERSION_FILE="${CONTENT_FOLDER}/.version"
 
 function download_content {
-  if [[ -d "$CONTENT_FOLDER" ]]; then
-    echo "Backing up existing Content..."
-    mv -v "$CONTENT_FOLDER" "${CONTENT_FOLDER}_$(date +%Y%m%d%H%M%S)"
-  fi
+
   mkdir -p "$CONTENT_FOLDER"
   mkdir -p Content
   if hash aria2c 2>/dev/null; then
@@ -70,7 +67,7 @@ function download_content {
   fi
   tar -xvzf Content.tar.gz -C Content
   rm Content.tar.gz
-  mv Content/* "$CONTENT_FOLDER"
+  cp -an Content/. "$CONTENT_FOLDER/"
   rm -rf Content
   echo "$CONTENT_ID" > "$VERSION_FILE"
   echo "Content updated successfully."

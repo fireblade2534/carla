@@ -1138,7 +1138,7 @@ ECarlaServerResponse FVehicleActor::RestorePhysXPhysics()
 
 // FTrafficLightActor functions ---------------------
 
-ECarlaServerResponse FTrafficLightActor::SetTrafficLightState(const ETrafficLightState& State)
+ECarlaServerResponse FTrafficLightActor::SetTrafficLightState(const FTrafficLightState& State)
 {
   if (IsDormant())
   {
@@ -1157,7 +1157,7 @@ ECarlaServerResponse FTrafficLightActor::SetTrafficLightState(const ETrafficLigh
   return ECarlaServerResponse::Success;
 }
 
-ETrafficLightState FTrafficLightActor::GetTrafficLightState() const
+FTrafficLightState FTrafficLightActor::GetTrafficLightState() const
 {
   if (IsDormant())
   {
@@ -1169,7 +1169,7 @@ ETrafficLightState FTrafficLightActor::GetTrafficLightState() const
     auto TrafficLight = Cast<ATrafficLightBase>(GetActor());
     if (TrafficLight == nullptr)
     {
-      return ETrafficLightState::Off;
+      return FTrafficLightState::Off;
     }
     return TrafficLight->GetTrafficLightState();
   }

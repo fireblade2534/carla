@@ -27,7 +27,7 @@ struct FTrafficLightStage
   float Time;
 
   UPROPERTY(EditAnywhere, BlueprintReadWrite)
-  ETrafficLightState State;
+  FTrafficLightState State;
 };
 
 /// Maps a controller from OpenDrive.
@@ -84,7 +84,7 @@ public:
   bool IsCycleFinished() const;
 
   UFUNCTION(Category = "Traffic Controller", BlueprintCallable)
-  void SetTrafficLightsState(ETrafficLightState NewState);
+  void SetTrafficLightsState(FTrafficLightState NewState);
 
   UFUNCTION(Category = "Traffic Controller", BlueprintCallable)
   int GetSequence() const;
@@ -125,20 +125,20 @@ public:
 
   const ATrafficLightGroup* GetGroup() const;
 
-  ETrafficLightState GetCurrentLightState() const
+  FTrafficLightState GetCurrentLightState() const
   {
     return CurrentLightState;
   }
-  void SetCurrentLightState(ETrafficLightState NewState)
+  void SetCurrentLightState(FTrafficLightState NewState)
   {
     CurrentLightState = NewState;
   }
 
 private:
 
-  void SetStateTime(const ETrafficLightState State, float NewTime);
+  void SetStateTime(const FTrafficLightState State, float NewTime);
 
-  float GetStateTime(const ETrafficLightState State) const;
+  float GetStateTime(const FTrafficLightState State) const;
 
   UPROPERTY(Category = "Traffic Controller", EditAnywhere)
   FString ControllerId = "";
@@ -149,9 +149,9 @@ private:
   // Pairs with the state of the semaphors (time - state) e.g. 10s in green
   UPROPERTY(Category = "Traffic Controller", EditAnywhere)
   TArray<FTrafficLightStage> LightStates = {
-    {10, ETrafficLightState::Green},
-    { 3, ETrafficLightState::Yellow},
-    { 2, ETrafficLightState::Red}
+    {10, FTrafficLightState::Green},
+    { 3, FTrafficLightState::Yellow},
+    { 2, FTrafficLightState::Red}
   };
 
   UPROPERTY(Category = "Traffic Controller", EditAnywhere)
@@ -169,5 +169,5 @@ private:
   UPROPERTY()
   float ElapsedTime = 0;
 
-  ETrafficLightState CurrentLightState = ETrafficLightState::Green;
+  FTrafficLightState CurrentLightState = FTrafficLightState::Green;
 };

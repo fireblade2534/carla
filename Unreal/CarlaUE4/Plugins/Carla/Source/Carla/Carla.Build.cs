@@ -19,6 +19,8 @@ public class Carla : ModuleRules
   {
     PrivatePCHHeaderFile = "Carla.h";
 
+    CppStandard = CppStandardVersion.Cpp17;
+
     if (IsWindows(Target))
     {
       bEnableExceptions = true;

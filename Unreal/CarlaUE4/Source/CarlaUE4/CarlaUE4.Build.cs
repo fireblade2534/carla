@@ -6,7 +6,7 @@ public class CarlaUE4 : ModuleRules
 {
 	public CarlaUE4(ReadOnlyTargetRules Target) : base(Target)
 	{
-    PrivatePCHHeaderFile = "CarlaUE4.h";
+    	PrivatePCHHeaderFile = "CarlaUE4.h";
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
